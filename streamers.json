@@ -262,6 +262,17 @@
       "viewers": 0,
       "isLive": false,
       "lastOnline": null
+    },
+    {
+      "name": "Dr Pauper",
+      "platform": "twitch",
+      "channelId": "dr_pauper",
+      "banned": false,
+      "title": "Offline",
+      "thumbnail": "https://static-cdn.jtvnw.net/jtv_user_pictures/4a130272-19b7-482a-9f02-ab308aeb6dbc-profile_image-300x300.png",
+      "viewers": 0,
+      "isLive": false,
+      "lastOnline": null
     }
   ]
 }
