@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP2 ALWAYS</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #0E0E10;
+            color: #efeff1;
+        }
+
+        .stream-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .stream-item {
+            background-color: #1F1F23;
+            border-radius: 0;
+            overflow: hidden;
+            position: relative;
+            padding-left: 4px;
+        }
+
+        .stream-link {
+            display: flex;
+            text-decoration: none;
+            color: inherit;
+            padding: 10px;
+        }
+
+        .thumbnail-container {
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .profile-pic {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .stream-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex-grow: 1;
+        }
+
+        .streamer-name {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .stream-title {
+            color: #ADADB8;
+            font-size: 0.9em;
+            margin-bottom: 4px;
+        }
+
+        .viewer-count {
+            color: #ADADB8;
+            font-size: 0.8em;
+        }
+
+        .offline {
+            opacity: 0.6;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #efeff1;
+        }
+
+        .live-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #eb0400;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+
+        .refresh-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(24, 24, 27, 0.9);
+            color: #ADADB8;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            z-index: 1000;
+        }
+
+        .refresh-notification.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <button onclick="toggleInactiveStreamers()" class="toggle-button">Toggle Inactive</button>
+        <div id="refresh-notification" class="refresh-notification"></div>
+    </div>
+    
+    <!-- Add banned streamers section -->
+    <div id="banned-streamers" class="banned-streamers" style="display: none;">
+        <div class="banned-streamers-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12" y2="16"></line>
+            </svg>
+            Banned Streamers
+        </div>
+        <div id="banned-streamers-list" class="banned-streamers-list">
+            <!-- Banned streamers will be inserted here -->
+        </div>
+    </div>
+
+    <div class="stream-list" id="streamList"></div>
+    <div class="refresh-notification" id="refreshNotification">Last updated just now</div>
+    <script src="script.js"></script>
+</body>
+</html>
