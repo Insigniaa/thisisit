@@ -557,37 +557,52 @@ const PROFILE_PICTURE_CONFIG = {
 };
 
 // Cache for profile pictures
-const PROFILE_PICTURE_CACHE = new Map();
+const PROFILE_PICTURE_CACHE_FILE = path.join(__dirname, 'cache', 'profile-pictures.json');
 
-// Function to check if profile picture needs update
-function needsProfilePictureUpdate(channelId, platform) {
-    const cacheKey = `${platform}-${channelId}`;
-    const lastUpdated = PROFILE_PICTURE_CACHE.get(cacheKey);
-    const now = Date.now();
-    
-    if (!lastUpdated) {
-        return true;
+// Initialize profile picture cache from file
+let PROFILE_PICTURE_CACHE = new Map();
+try {
+    const cacheData = JSON.parse(await fs.readFile(PROFILE_PICTURE_CACHE_FILE, 'utf8'));
+    PROFILE_PICTURE_CACHE = new Map(Object.entries(cacheData));
+} catch (error) {
+    // Cache file doesn't exist yet, will be created on first update
+    console.log('No profile picture cache file found, starting fresh');
+}
+
+// Function to save profile picture cache to file
+async function saveProfilePictureCache() {
+    try {
+        await fs.mkdir(path.join(__dirname, 'cache'), { recursive: true });
+        const cacheData = Object.fromEntries(PROFILE_PICTURE_CACHE);
+        await fs.writeFile(PROFILE_PICTURE_CACHE_FILE, JSON.stringify(cacheData, null, 2));
+    } catch (error) {
+        console.error('Error saving profile picture cache:', error);
     }
-
-    const timeSinceUpdate = now - lastUpdated;
-    return timeSinceUpdate >= PROFILE_PICTURE_CONFIG.PROFILE_PICTURE.UPDATE_INTERVAL;
 }
 
 // Function to update profile picture cache
-function updateProfilePictureCache(channelId, platform) {
+async function updateProfilePictureCache(channelId, platform) {
     const cacheKey = `${platform}-${channelId}`;
     PROFILE_PICTURE_CACHE.set(cacheKey, Date.now());
-}
-
-// Function to get cached profile picture path
-function getCachedProfilePicturePath(channelId, platform) {
-    const filename = `${platform}-${channelId}.jpg`;
-    return `/images/profiles/${filename}`;
+    await saveProfilePictureCache();
 }
 
 // Function to download and save profile picture
 async function downloadProfilePicture(url, channelId, platform) {
     try {
+        // Check if we already have this profile picture and it's not time to update
+        if (!needsProfilePictureUpdate(channelId, platform)) {
+            const existingFile = await findExistingProfilePicture(channelId, platform);
+            if (existingFile) {
+                console.log(`Using existing profile picture for ${platform}-${channelId}`);
+                return {
+                    channelId,
+                    platform,
+                    localPath: `/images/profiles/${existingFile}`
+                };
+            }
+        }
+
         console.log(`Downloading profile picture from: ${url}`);
         
         // Add user agent and headers to avoid blocking
@@ -625,20 +640,12 @@ async function downloadProfilePicture(url, channelId, platform) {
         const filename = `${platform}-${channelId}.${ext}`;
         const filepath = path.join(__dirname, 'images', 'profiles', filename);
 
-        // Remove existing file if it exists
-        try {
-            await fs.unlink(filepath);
-            console.log(`Removed existing file: ${filepath}`);
-        } catch (error) {
-            // Ignore error if file doesn't exist
-        }
-
-        // Write new file
+        // Write new file without deleting old one first
         await fs.writeFile(filepath, Buffer.from(buffer));
         console.log(`Successfully wrote file: ${filepath}`);
         
         // Update cache timestamp
-        updateProfilePictureCache(channelId, platform);
+        await updateProfilePictureCache(channelId, platform);
         
         return {
             channelId,
@@ -648,19 +655,14 @@ async function downloadProfilePicture(url, channelId, platform) {
     } catch (error) {
         console.error(`Error downloading profile picture for ${platform}-${channelId}:`, error.message);
         // If download fails, try to return existing cached image if available
-        try {
-            const files = await fs.readdir(path.join(__dirname, 'images', 'profiles'));
-            const existingFile = files.find(f => f.startsWith(`${platform}-${channelId}.`));
-            if (existingFile) {
-                console.log(`Using existing cached profile picture: ${existingFile}`);
-                return {
-                    channelId,
-                    platform,
-                    localPath: `/images/profiles/${existingFile}`
-                };
-            }
-        } catch (error) {
-            console.error('Error checking for cached profile picture:', error);
+        const existingFile = await findExistingProfilePicture(channelId, platform);
+        if (existingFile) {
+            console.log(`Using existing cached profile picture: ${existingFile}`);
+            return {
+                channelId,
+                platform,
+                localPath: `/images/profiles/${existingFile}`
+            };
         }
         return {
             channelId,
@@ -668,6 +670,37 @@ async function downloadProfilePicture(url, channelId, platform) {
             localPath: '/default-avatar.png'  // Fallback to default avatar
         };
     }
+}
+
+// Helper function to find existing profile picture
+async function findExistingProfilePicture(channelId, platform) {
+    try {
+        const files = await fs.readdir(path.join(__dirname, 'images', 'profiles'));
+        return files.find(f => f.startsWith(`${platform}-${channelId}.`));
+    } catch (error) {
+        console.error('Error checking for existing profile picture:', error);
+        return null;
+    }
+}
+
+// Function to check if profile picture needs update
+function needsProfilePictureUpdate(channelId, platform) {
+    const cacheKey = `${platform}-${channelId}`;
+    const lastUpdated = PROFILE_PICTURE_CACHE.get(cacheKey);
+    const now = Date.now();
+    
+    if (!lastUpdated) {
+        return true;
+    }
+
+    const timeSinceUpdate = now - lastUpdated;
+    return timeSinceUpdate >= PROFILE_PICTURE_CONFIG.PROFILE_PICTURE.UPDATE_INTERVAL;
+}
+
+// Function to get cached profile picture path
+function getCachedProfilePicturePath(channelId, platform) {
+    const filename = `${platform}-${channelId}.jpg`;
+    return `/images/profiles/${filename}`;
 }
 
 // Endpoint to proxy profile picture requests
