@@ -273,6 +273,17 @@
       "viewers": 0,
       "isLive": false,
       "lastOnline": null
+    },
+    {
+      "name": "KangJoel",
+      "platform": "kick",
+      "channelId": "kangjoel",
+      "banned": false,
+      "title": "Offline",
+      "thumbnail": null,
+      "viewers": 0,
+      "isLive": false,
+      "lastOnline": null
     }
   ]
 }
