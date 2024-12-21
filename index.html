@@ -4,166 +4,186 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="IP2 ALWAYS - Live Stream Directory">
-    <meta name="theme-color" content="#0E0E10">
+    <meta name="theme-color" content="#18181B">
     <meta property="og:title" content="IP2 ALWAYS">
     <meta property="og:description" content="Live Stream Directory - Watch your favorite streamers">
     <meta property="og:type" content="website">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     
     <title>IP2 ALWAYS</title>
     
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Critical CSS -->
     <style>
-        /* Critical CSS only - rest moved to styles.css */
+        :root {
+            --primary-bg: #18181B;
+            --secondary-bg: #1F1F23;
+            --card-bg: #27272A;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A1A1AA;
+            --accent-color: #8B5CF6;
+            --danger-color: #EF4444;
+            --success-color: #10B981;
+            --twitch-color: #9146FF;
+            --kick-color: #53FC18;
+            --youtube-color: #FF0000;
+            --border-radius: 12px;
+            --transition-speed: 0.2s;
+        }
+
         body {
-            font-family: 'Roboto', Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #0E0E10;
-            color: #efeff1;
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
         }
-        
-        .stream-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-width: 800px;
+
+        .container {
+            max-inline-size: 1440px;
             margin: 0 auto;
+            padding: 0 24px;
         }
 
-        .stream-item {
-            background-color: #1F1F23;
-            border-radius: 0;
-            overflow: hidden;
-            position: relative;
-            padding-left: 4px;
+        .header {
+            background: rgba(24, 24, 27, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            position: sticky;
+            inset-block-start: 0;
+            z-index: 100;
+            border-block-end: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px 0;
         }
 
-        .stream-link {
+        .header-content {
             display: flex;
-            text-decoration: none;
-            color: inherit;
-            padding: 10px;
+            justify-content: space-between;
+            align-items: center;
+            gap: 24px;
         }
 
-        .thumbnail-container {
-            width: 50px;
-            height: 50px;
-            margin-right: 10px;
+        .logo-container {
             flex-shrink: 0;
         }
 
-        .profile-pic {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
+        .logo {
+            block-size: 40px;
+            inline-size: auto;
+            transition: transform var(--transition-speed);
         }
 
-        .stream-info {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .search-wrapper {
             flex-grow: 1;
+            max-inline-size: 600px;
+            position: relative;
         }
 
-        .streamer-name {
-            font-weight: bold;
-            margin-bottom: 4px;
+        .search-input {
+            inline-size: 100%;
+            padding: 12px 16px;
+            padding-inline-start: 44px;
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            color: var(--text-primary);
+            font-size: 16px;
+            transition: all var(--transition-speed);
         }
 
-        .stream-title {
-            color: #ADADB8;
-            font-size: 0.9em;
-            margin-bottom: 4px;
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
         }
 
-        .viewer-count {
-            color: #ADADB8;
-            font-size: 0.8em;
-        }
-
-        .offline {
-            opacity: 0.6;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #efeff1;
-        }
-
-        .live-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background-color: #eb0400;
-            border-radius: 50%;
-            margin-right: 6px;
-            animation: blink 1.5s ease-in-out infinite;
-        }
-
-        @keyframes blink {
-            0% { opacity: 1; }
-            50% { opacity: 0.4; }
-            100% { opacity: 1; }
-        }
-
-        .refresh-notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: rgba(24, 24, 27, 0.9);
-            color: #ADADB8;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-            z-index: 1000;
-        }
-
-        .refresh-notification.show {
-            opacity: 1;
-        }
-        
-        .back-to-top {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: rgba(24, 24, 27, 0.9);
-            color: #ADADB8;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-            z-index: 1000;
+        .search-icon {
+            position: absolute;
+            inset-inline-start: 16px;
+            inset-block-start: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 16px;
         }
     </style>
 </head>
 <body>
-    <div class="logo-container">
-        <img src="images/IP2CX-Logo.png" alt="IP2CX Logo" class="logo">
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
     </div>
-    <div class="search-wrapper">
-        <input type="text" id="searchInput" class="search-input" placeholder="Search streams...">
-    </div>
-    <main>
-        <section class="stream-list" id="streamList">
-        </section>
 
-        <div id="banned-streamers" class="banned-streamers">
-            <div id="banned-streamers-list"></div>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-container">
+                    <img src="images/IP2CX-Logo.png" alt="IP2CX Logo" class="logo">
+                </div>
+                <div class="search-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search streams..." aria-label="Search streams">
+                </div>
+            </div>
         </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="filters" id="streamFilters">
+                <button class="filter-btn active" data-filter="all">
+                    <i class="fas fa-globe"></i>
+                    All Platforms
+                </button>
+                <button class="filter-btn" data-filter="twitch">
+                    <i class="fab fa-twitch"></i>
+                    Twitch
+                </button>
+                <button class="filter-btn" data-filter="kick">
+                    <i class="fas fa-gamepad"></i>
+                    Kick
+                </button>
+                <button class="filter-btn" data-filter="youtube">
+                    <i class="fab fa-youtube"></i>
+                    YouTube
+                </button>
+            </div>
+
+            <section class="stream-grid" id="streamList" role="region" aria-label="Stream list">
+                <!-- Stream items will be dynamically inserted here -->
+            </section>
+        </div>
+
+        <aside class="banned-streamers" id="bannedStreamers" role="complementary" aria-label="Banned streamers">
+            <div class="banned-header">
+                <h2 class="banned-title">Banned Streamers</h2>
+            </div>
+            <div class="banned-list" id="bannedStreamersList">
+                <!-- Banned streamers will be dynamically inserted here -->
+            </div>
+        </aside>
     </main>
 
-    <div id="error-message" class="error-message" role="alert" aria-live="assertive"></div>
-    <div class="refresh-notification" id="refreshNotification" role="status" aria-live="polite">Last updated just now</div>
+    <div id="errorMessage" class="error-message" role="alert" aria-live="assertive"></div>
     
-    <button class="back-to-top" id="backToTop">↑</button>
+    <div class="refresh-notification" id="refreshNotification" role="status" aria-live="polite">
+        <i class="fas fa-sync-alt"></i>
+        Last updated <span id="lastUpdateTime">just now</span>
+    </div>
+    
+    <button class="back-to-top" id="backToTop" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <div class="toast-container" id="toastContainer" aria-live="polite"></div>
     
     <script src="script.js" defer></script>
 </body>
