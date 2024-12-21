@@ -1,3 +1,4 @@
+// Updated on: 2024-01-21
 // Constants
 const CONFIG = {
     STORAGE_KEY: 'streamers',
