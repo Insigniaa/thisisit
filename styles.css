@@ -2117,6 +2117,17 @@ main {
     filter: blur(5px);
 }
 
+.optimized-image {
+    transition: opacity 0.3s ease-in-out;
+    opacity: 1;
+    object-fit: cover;
+}
+
+.optimized-image.image-error {
+    opacity: 0.5;
+    filter: grayscale(100%);
+}
+
 /* Mobile Enhancements */
 @media (max-width: 768px) {
     .stream-grid {

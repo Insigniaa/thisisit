@@ -10,6 +10,7 @@ import { makeYouTubeRequest } from './youtubeApiRotation.js';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
 import bcrypt from 'bcryptjs';
+import NodeCache from 'node-cache';
 
 dotenv.config();
 
@@ -484,6 +485,26 @@ async function getCachedStatus(platform, channelId, fetchFunction, cacheDuration
             errorMessage: error.message 
         };
     }
+}
+
+// Enhanced Caching Mechanism
+const apiCache = new NodeCache({
+    stdTTL: 300, // 5 minutes default cache time
+    checkperiod: 320 // Checks and removes expired keys every 320 seconds
+});
+
+// Enhanced caching function
+function getCachedOrFetch(cacheKey, fetchFunction, ttl = 300) {
+    // Try to get cached result
+    const cachedResult = apiCache.get(cacheKey);
+    if (cachedResult) {
+        return cachedResult;
+    }
+
+    // If not cached, fetch and cache the result
+    const result = fetchFunction();
+    apiCache.set(cacheKey, result, ttl);
+    return result;
 }
 
 // Function to ensure profiles directory exists
@@ -1058,6 +1079,43 @@ app.delete('/admin/streamers/:channelId', async (req, res) => {
         console.error('Error removing streamer:', error);
         res.status(500).json({ error: 'Failed to remove streamer' });
     }
+});
+
+// Endpoint to get streamer status with quota information
+app.get('/streamer-status/:platform/:channelId', async (req, res) => {
+    const { platform, channelId } = req.params;
+    const cacheKey = `streamer-status-${platform}-${channelId}`;
+
+    try {
+        const status = await getCachedOrFetch(cacheKey, async () => {
+            switch(platform) {
+                case 'youtube':
+                    return await getYouTubeStreamerStatus(channelId);
+                case 'kick':
+                    return await getKickStreamerStatus(channelId);
+                case 'twitch':
+                    return await getTwitchStreamerStatus(channelId);
+                default:
+                    throw new Error('Unsupported platform');
+            }
+        });
+        res.json(status);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Add cache management endpoints
+app.get('/cache/stats', (req, res) => {
+    res.json({
+        keys: apiCache.keys(),
+        stats: apiCache.getStats()
+    });
+});
+
+app.delete('/cache/clear', (req, res) => {
+    apiCache.flushAll();
+    res.json({ message: 'Cache cleared successfully' });
 });
 
 app.listen(port, () => {

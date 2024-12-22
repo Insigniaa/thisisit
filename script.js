@@ -31,6 +31,43 @@ const errorMessage = document.getElementById('errorMessage');
 const streamFilters = document.getElementById('streamFilters');
 const toastContainer = document.getElementById('toastContainer');
 
+// Memoization Utility
+const memoize = (fn) => {
+    const cache = new Map();
+    return (...args) => {
+        const key = JSON.stringify(args);
+        if (cache.has(key)) {
+            return cache.get(key);
+        }
+        const result = fn(...args);
+        cache.set(key, result);
+        return result;
+    };
+};
+
+// Memoize frequently used functions
+const memoizedFetchStreamerStatus = memoize(async (platform, channelId) => {
+    try {
+        const response = await fetch(`/streamer-status/${platform}/${channelId}`);
+        return await response.json();
+    } catch (error) {
+        console.error(`Error fetching ${platform} status for ${channelId}:`, error);
+        return null;
+    }
+});
+
+const memoizedFilterStreamers = memoize((streamers, filterCondition) => {
+    return streamers.filter(filterCondition);
+});
+
+const memoizedSortStreamers = memoize((streamers, sortKey) => {
+    return [...streamers].sort((a, b) => {
+        if (a[sortKey] < b[sortKey]) return -1;
+        if (a[sortKey] > b[sortKey]) return 1;
+        return 0;
+    });
+});
+
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -508,6 +545,8 @@ async function createStreamCard(streamer) {
         }
     }
 
+    const profileImage = createOptimizedImage(profilePath, streamer.name, 'profile-pic');
+
     const contentWrapper = streamer.banned ? 
         document.createElement('div') : 
         document.createElement('a');
@@ -535,7 +574,7 @@ async function createStreamCard(streamer) {
             </div>
             <div class="thumbnail-container">
                 <div class="image-placeholder"></div>
-                <img src="${profilePath}" alt="${streamer.name}" class="profile-pic" onerror="this.src='default-avatar.png'">
+                ${profileImage.outerHTML}
                 ${streamer.banned ? '<div class="banned-overlay"><i class="fas fa-ban"></i></div>' : ''}
             </div>
         </div>
@@ -960,4 +999,61 @@ function createLoadingCard() {
     `;
     
     return card;
+}
+
+// Enhanced image loading with native lazy loading
+function createOptimizedImage(src, alt, className = '') {
+    const img = new Image();
+    img.src = src;
+    img.alt = alt;
+    img.classList.add(className, 'optimized-image');
+    img.loading = 'lazy';  // Native lazy loading
+    
+    // Graceful error handling
+    img.onerror = () => {
+        img.src = 'default-avatar.png';
+        img.classList.add('image-error');
+    };
+
+    // Performance tracking
+    img.addEventListener('load', () => {
+        console.log(`Image loaded efficiently: ${src}`);
+    });
+
+    return img;
+}
+
+// Example of using memoized functions
+async function updateStreamersList() {
+    try {
+        const allStreamers = await fetchStreamers();
+        
+        // Use memoized filter and sort
+        const onlineStreamers = memoizedFilterStreamers(
+            allStreamers, 
+            streamer => streamer.status === 'online'
+        );
+        
+        const sortedStreamers = memoizedSortStreamers(
+            onlineStreamers, 
+            'viewers'
+        );
+        
+        renderStreamers(sortedStreamers);
+    } catch (error) {
+        console.error('Error updating streamers list:', error);
+    }
+}
+
+// Performance monitoring for memoized functions
+function trackMemoizationPerformance() {
+    const originalMemoizedFetchStatus = memoizedFetchStreamerStatus;
+    memoizedFetchStreamerStatus = (...args) => {
+        const start = performance.now();
+        const result = originalMemoizedFetchStatus(...args);
+        const end = performance.now();
+        
+        console.log(`Memoized fetch status time: ${end - start}ms`);
+        return result;
+    };
 }
