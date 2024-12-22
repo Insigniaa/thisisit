@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="IP2 ALWAYS - Live Stream Directory">
+    <meta name="theme-color" content="#18181B">
+    <meta property="og:title" content="IP2 ALWAYS">
+    <meta property="og:description" content="Live Stream Directory - Watch your favorite streamers">
+    <meta property="og:type" content="website">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    
+    <title>IP2 ALWAYS</title>
+    
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Critical CSS -->
+    <style>
+        :root {
+            --primary-bg: #18181B;
+            --secondary-bg: #1F1F23;
+            --card-bg: #27272A;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A1A1AA;
+            --accent-color: #8B5CF6;
+            --danger-color: #EF4444;
+            --success-color: #10B981;
+            --twitch-color: #9146FF;
+            --kick-color: #53FC18;
+            --youtube-color: #FF0000;
+            --border-radius: 12px;
+            --transition-speed: 0.2s;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-inline-size: 1440px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .header {
+            background: rgba(24, 24, 27, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            position: sticky;
+            inset-block-start: 0;
+            z-index: 100;
+            border-block-end: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px 0;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .logo-container {
+            flex-shrink: 0;
+        }
+
+        .logo {
+            block-size: 40px;
+            inline-size: auto;
+            transition: transform var(--transition-speed);
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .search-wrapper {
+            flex-grow: 1;
+            max-inline-size: 600px;
+            position: relative;
+        }
+
+        .search-input {
+            inline-size: 100%;
+            padding: 12px 16px;
+            padding-inline-start: 44px;
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            color: var(--text-primary);
+            font-size: 16px;
+            transition: all var(--transition-speed);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+        }
+
+        .search-icon {
+            position: absolute;
+            inset-inline-start: 16px;
+            inset-block-start: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="logo-container main-logo">
+                <img src="images/IP2CX-Logo.png" alt="IP2CX Logo" class="logo">
+            </div>
+            
+            <div class="filters" id="streamFilters">
+                <button class="filter-btn active" data-filter="all">
+                    <i class="fas fa-globe"></i>
+                    <span>All Platforms</span>
+                </button>
+                <button class="filter-btn" data-filter="twitch">
+                    <img src="images/twitch-logo.png" alt="Twitch" class="platform-filter-logo">
+                    Twitch
+                </button>
+                <button class="filter-btn" data-filter="kick">
+                    <img src="images/kick-logo.png" alt="Kick" class="platform-filter-logo">
+                    <span>Kick</span>
+                </button>
+                <button class="filter-btn" data-filter="youtube">
+                    <img src="images/youtube-logo-new.svg" alt="YouTube" class="platform-filter-logo">
+                    YouTube
+                </button>
+            </div>
+
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search streams..." aria-label="Search streams">
+                </div>
+            </div>
+
+            <section class="stream-grid" id="streamList" role="region" aria-label="Stream list">
+                <!-- Stream items will be dynamically inserted here -->
+            </section>
+        </div>
+
+        <div class="touch-gesture-area left"></div>
+        <div class="touch-gesture-area right"></div>
+
+        <aside class="banned-streamers" id="bannedStreamers" role="complementary" aria-label="Banned streamers">
+            <div class="banned-header">
+                <h2 class="banned-title">Banned Streamers</h2>
+            </div>
+            <div class="banned-list" id="bannedStreamersList">
+                <!-- Banned streamers will be dynamically inserted here -->
+            </div>
+        </aside>
+    </main>
+
+    <div id="errorMessage" class="error-message" role="alert" aria-live="assertive"></div>
+    
+    <div class="refresh-notification" id="refreshNotification" role="status" aria-live="polite">
+        <i class="fas fa-sync-alt"></i>
+        <span class="update-label">Next update in:</span>
+        <span class="time-display">
+            <span id="lastUpdateTime">60s</span>
+            <span class="countdown-bar"></span>
+        </span>
+    </div>
+    
+    <button class="back-to-top" id="backToTop" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+    <script src="script.js" defer></script>
+</body>
+</html>

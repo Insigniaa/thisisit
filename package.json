@@ -1,0 +1,353 @@
+{
+    "name": "streamer-dashboard",
+    "version": "1.0.0",
+    "description": "Streamer Dashboard with persistent storage",
+    "main": "server.js",
+    "type": "module",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "bcryptjs": "^2.4.3",
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.5",
+        "dotenv": "^16.3.1",
+        "express": "^4.18.2",
+        "express-session": "^1.18.1",
+        "node-fetch": "^3.3.2"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Insigniaa/thisisit.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/Insigniaa/thisisit/issues"
+    },
+    "homepage": "https://github.com/Insigniaa/thisisit#readme",
+    "streamers": [
+        {
+            "name": "CaptainGee",
+            "platform": "kick",
+            "channelId": "captaingee",
+            "title": "Offline",
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": null,
+            "thumbnail": "https://files.kick.com/images/user/25447701/profile_image/conversion/17cb3d33-9749-4f67-95cb-7b6388b9e4e5-fullsize.webp"
+        },
+        {
+            "name": "Moxie",
+            "title": "Offline",
+            "viewers": 0,
+            "thumbnail": "https://files.kick.com/images/user/4162303/profile_image/conversion/e28c5e21-e4d6-47c0-99eb-ed9b77634752-fullsize.webp",
+            "platform": "kick",
+            "channelId": "Moxie",
+            "isLive": false,
+            "lastOnline": null,
+            "banned": false
+        },
+        {
+            "name": "garydavid",
+            "title": "FAST FOOD WORKER",
+            "viewers": 1137,
+            "thumbnail": "https://files.kick.com/images/user/72807/profile_image/conversion/2c0b8ace-310f-4054-a885-407bc762001b-fullsize.webp",
+            "platform": "kick",
+            "channelId": "garydavid",
+            "isLive": true,
+            "lastOnline": 1734555112420
+        },
+        {
+            "name": "Taxi Marcel Denhaag",
+            "title": "TAXI live in regio zuid holland (den haag)",
+            "viewers": 62,
+            "thumbnail": "https://static-cdn.jtvnw.net/jtv_user_pictures/93b1f346-6c40-4c69-a07d-ce585184218e-profile_image-300x300.png",
+            "platform": "twitch",
+            "channelId": "taximarceldenhaag",
+            "isLive": true,
+            "lastOnline": 1734555112427,
+            "banned": false,
+            "banReason": "Channel not found"
+        },
+        {
+            "name": "nataliereynolds",
+            "title": "Offline",
+            "viewers": 0,
+            "thumbnail": "https://files.kick.com/images/user/18501573/profile_image/conversion/ba406531-a654-419a-b788-4d2262ea1054-fullsize.webp",
+            "platform": "kick",
+            "channelId": "nataliereynolds",
+            "isLive": false,
+            "lastOnline": 1734304555359,
+            "banned": false
+        },
+        {
+            "name": "KrykoFox",
+            "title": "Offline",
+            "viewers": 0,
+            "thumbnail": "https://static-cdn.jtvnw.net/jtv_user_pictures/347f2da8-a0f4-4cbe-b45d-915bb13694b7-profile_image-300x300.png",
+            "platform": "twitch",
+            "channelId": "krykofox",
+            "isLive": false,
+            "lastOnline": 1734306052904,
+            "banned": false,
+            "banReason": "Channel not found"
+        },
+        {
+            "name": "One Sonic",
+            "title": "Offline",
+            "viewers": 0,
+            "thumbnail": "/images/profiles/youtube-UCDDrY00FPYwLp9VqRhWiDgg.jpg",
+            "platform": "youtube",
+            "channelId": "UCDDrY00FPYwLp9VqRhWiDgg",
+            "isLive": false,
+            "lastOnline": 1734202325301,
+            "banned": false,
+            "banReason": "Channel not found",
+            "lastProfileUpdate": 1734544099632
+        },
+        {
+            "name": "JOSE SANDERS JOURNEYS LIVESTREAM",
+            "title": "Offline",
+            "viewers": 0,
+            "thumbnail": "/images/profiles/youtube-UCAp3jeyngZslUEx_D1djgHg.jpg",
+            "platform": "youtube",
+            "channelId": "UCAp3jeyngZslUEx_D1djgHg",
+            "isLive": false,
+            "lastOnline": 1734285602664,
+            "lastProfileUpdate": 1734544099632
+        },
+        {
+            "name": "VeganPatriot",
+            "title": "Error",
+            "viewers": 0,
+            "thumbnail": "/images/profiles/youtube-UCUNHxLIQ1AgtYCTGXxBvX2w.jpg",
+            "platform": "youtube",
+            "channelId": "UCUNHxLIQ1AgtYCTGXxBvX2w",
+            "isLive": false,
+            "lastOnline": 1734202325925,
+            "lastProfileUpdate": 1734544099632
+        },
+        {
+            "name": "Ice Poseidon",
+            "title": "Offline",
+            "viewers": 0,
+            "thumbnail": "https://files.kick.com/images/user/146923/profile_image/conversion/f13387ea-e14f-477f-8d59-742250aac30a-fullsize.webp",
+            "platform": "kick",
+            "channelId": "iceposeidon",
+            "isLive": false,
+            "lastOnline": 1734285603437,
+            "banned": false
+        },
+        {
+            "name": "Tricialicious",
+            "title": "Offline",
+            "viewers": 0,
+            "thumbnail": "/images/profiles/youtube-UCWVmeAY6Su1ZR16aHe1aZKQ.jpg",
+            "platform": "youtube",
+            "channelId": "UCWVmeAY6Su1ZR16aHe1aZKQ",
+            "isLive": false,
+            "lastOnline": 1734544102303,
+            "banned": false,
+            "banReason": "Channel not found",
+            "lastProfileUpdate": 1734544099632
+        },
+        {
+            "name": "hyubsama",
+            "platform": "kick",
+            "channelId": "hyubsama",
+            "title": "Offline",
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": 1734306052921,
+            "banned": false,
+            "thumbnail": "https://files.kick.com/images/user/168860/profile_image/conversion/80cf90fd-4e8a-43a1-abfc-2e9e39487332-fullsize.webp"
+        },
+        {
+            "name": "ShoeNice 22",
+            "platform": "youtube",
+            "channelId": "UCyuCA6viLm6zsL6LNq67Tjg",
+            "title": "Error",
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": null,
+            "banned": false,
+            "banReason": "Channel not found",
+            "thumbnail": "/images/profiles/youtube-UCyuCA6viLm6zsL6LNq67Tjg.jpg",
+            "lastProfileUpdate": 1734544099632
+        },
+        {
+            "name": "Kip on the Ground",
+            "platform": "youtube",
+            "channelId": "UCRjH9vXg5gGgEzQjXO99HXg",
+            "title": "Offline",
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": null,
+            "banned": false,
+            "banReason": "Channel not found",
+            "thumbnail": "/images/profiles/youtube-UCRjH9vXg5gGgEzQjXO99HXg.jpg",
+            "lastProfileUpdate": 1734544099632
+        },
+        {
+            "name": "Scuffed Justin Carrey",
+            "platform": "youtube",
+            "channelId": "UC4YYNTbzt3X1uxdTCJaYWdg",
+            "banned": false,
+            "title": "to chat go to parti.com/sjc",
+            "viewers": 35,
+            "isLive": true,
+            "lastOnline": 1734555115042,
+            "thumbnail": "/images/profiles/youtube-UC4YYNTbzt3X1uxdTCJaYWdg.jpg",
+            "lastProfileUpdate": 1734544099632
+        },
+        {
+            "name": "Shabbatai",
+            "platform": "twitch",
+            "channelId": "shabbatai",
+            "banned": false,
+            "title": "",
+            "thumbnail": "https://static-cdn.jtvnw.net/jtv_user_pictures/a5ad6920-c9ad-465e-b9a1-5ccb8c0b52bf-profile_image-300x300.png",
+            "viewers": 10,
+            "isLive": true,
+            "lastOnline": 1734555115046,
+            "banReason": "Channel not found"
+        },
+        {
+            "name": "MuratStyle",
+            "platform": "kick",
+            "channelId": "muratstyle",
+            "banned": false,
+            "title": "Offline",
+            "thumbnail": "/images/profiles/kick-muratstyle.jpg",
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": null
+        },
+        {
+            "name": "Savage Audits",
+            "platform": "youtube",
+            "channelId": "UCelDIDGl6K5WCAIx7-L_FBQ",
+            "banned": false,
+            "title": "Offline",
+            "thumbnail": "/images/profiles/youtube-UCelDIDGl6K5WCAIx7-L_FBQ.jpg",
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": null
+        },
+        {
+            "name": "Mr Based Live",
+            "platform": "youtube",
+            "channelId": "UCvGi96uLKTsJB1CI-8o2hqw",
+            "banned": false,
+            "title": "Offline",
+            "thumbnail": null,
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": null
+        },
+        {
+            "name": "Vitaly",
+            "platform": "kick",
+            "channelId": "vitaly",
+            "banned": false,
+            "title": "Offline",
+            "thumbnail": null,
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": null
+        },
+        {
+            "name": "World Of Tshirts",
+            "platform": "kick",
+            "channelId": "worldoftshirts",
+            "banned": false,
+            "title": "Offline",
+            "thumbnail": null,
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": null
+        },
+        {
+            "name": "DexPuppy",
+            "platform": "youtube",
+            "channelId": "UCI0yWzRE50qxxngz09hbsHQ",
+            "banned": false,
+            "title": "Offline",
+            "thumbnail": null,
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": null
+        },
+        {
+            "name": "Dr Pauper",
+            "platform": "twitch",
+            "channelId": "dr_pauper",
+            "banned": false,
+            "title": "Offline",
+            "thumbnail": "https://static-cdn.jtvnw.net/jtv_user_pictures/4a130272-19b7-482a-9f02-ab308aeb6dbc-profile_image-300x300.png",
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": null
+        },
+        {
+            "name": "KangJoel",
+            "platform": "kick",
+            "channelId": "kangjoel",
+            "banned": false,
+            "title": "Offline",
+            "thumbnail": null,
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": null
+        },
+        {
+            "name": "Potgrond_",
+            "platform": "twitch",
+            "channelId": "potgrond_",
+            "banned": false,
+            "title": "Offline",
+            "thumbnail": "https://static-cdn.jtvnw.net/jtv_user_pictures/b6eadf15-938c-4422-bc8d-51238d85d7a6-profile_image-300x300.png",
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": null
+        },
+        {
+            "name": "Nanapips",
+            "platform": "kick",
+            "channelId": "Nanapips",
+            "banned": false,
+            "title": "Offline",
+            "thumbnail": null,
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": null
+        },
+        {
+            "name": "BurgerPlanet",
+            "platform": "kick",
+            "channelId": "BurgerPlanet",
+            "banned": false,
+            "title": "Offline",
+            "thumbnail": null,
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": null
+        },
+        {
+            "name": "DBR666",
+            "platform": "kick",
+            "channelId": "dbr666",
+            "banned": false,
+            "title": "Offline",
+            "thumbnail": null,
+            "viewers": 0,
+            "isLive": false,
+            "lastOnline": null
+        }
+    ]
+}
