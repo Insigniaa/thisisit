@@ -181,13 +181,11 @@
 
     <div id="errorMessage" class="error-message" role="alert" aria-live="assertive"></div>
     
-    <div class="refresh-notification" id="refreshNotification" role="status" aria-live="polite">
+    <div id="refreshNotification" class="refresh-notification">
         <i class="fas fa-sync-alt"></i>
-        <span class="update-label">Next update in:</span>
-        <span class="time-display">
-            <span id="lastUpdateTime">60s</span>
-            <span class="countdown-bar"></span>
-        </span>
+        <span class="update-label">Last updated:</span>
+        <span id="lastUpdateTime">--:--:--</span>
+        <span id="nextUpdateIn" class="next-update">Next update in 300 seconds</span>
     </div>
     
     <button class="back-to-top" id="backToTop" aria-label="Back to top">

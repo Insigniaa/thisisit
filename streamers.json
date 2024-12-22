@@ -418,9 +418,9 @@
       "lastOnline": null
     },
     {
-      "name": "CHRISTRAVELS",
+      "name": "CRISTRAVELS",
       "platform": "kick",
-      "channelId": "christravels",
+      "channelId": "cristravels",
       "banned": false,
       "title": "Offline",
       "thumbnail": null,
@@ -443,6 +443,39 @@
       "name": "Goodtimes4Life",
       "platform": "youtube",
       "channelId": "UCX7kqOjVtjZdOQ86u9nfWeQ",
+      "banned": false,
+      "title": "Offline",
+      "thumbnail": null,
+      "viewers": 0,
+      "isLive": false,
+      "lastOnline": null
+    },
+    {
+      "name": "nedx",
+      "platform": "kick",
+      "channelId": "nedx",
+      "banned": false,
+      "title": "Offline",
+      "thumbnail": null,
+      "viewers": 0,
+      "isLive": false,
+      "lastOnline": null
+    },
+    {
+      "name": "Suspendas",
+      "platform": "kick",
+      "channelId": "suspendas",
+      "banned": false,
+      "title": "Offline",
+      "thumbnail": null,
+      "viewers": 0,
+      "isLive": false,
+      "lastOnline": null
+    },
+    {
+      "name": "CRAZYTAWN",
+      "platform": "kick",
+      "channelId": "crazytawn",
       "banned": false,
       "title": "Offline",
       "thumbnail": null,

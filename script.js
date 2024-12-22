@@ -1,7 +1,7 @@
 // Constants
 const CONFIG = {
     STORAGE_KEY: 'streamers',
-    UPDATE_INTERVAL: 60000, // 1 minute
+    UPDATE_INTERVAL: 300000, // 5 minutes
     TOAST_DURATION: 3000,
     MAX_RETRIES: 3,
     UPDATE_CHECK_INTERVAL: 1000, // Check every second for time updates
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 await updateViewerCounts();
                 updateBannedStreamers();
             }
-        }, CONFIG.UPDATE_INTERVAL);
+        }, CONFIG.UPDATE_INTERVAL); // Every 5 minutes
 
     } catch (error) {
         console.error('Initialization error:', error);
@@ -344,20 +344,16 @@ async function updateStreamerStatus(streamer) {
 }
 
 // UI Updates
-function updateStreamList() {
-    if (!Array.isArray(STREAMERS)) {
-        console.error('STREAMERS is not an array:', STREAMERS);
-        return;
-    }
-    
-    const searchTerm = searchInput?.value?.toLowerCase() || '';
+async function updateStreamList() {
+    const searchTerm = searchInput.value.toLowerCase().trim();
     const filteredStreamers = STREAMERS.filter(streamer => {
-        if (!streamer || typeof streamer !== 'object') return false;
+        const matchesSearch = !searchTerm || 
+            streamer.name.toLowerCase().includes(searchTerm);
         
-        const matchesSearch = (streamer.name?.toLowerCase() || '').includes(searchTerm) ||
-                            (streamer.title?.toLowerCase() || '').includes(searchTerm);
-        const matchesFilter = currentFilter === 'all' || streamer.platform === currentFilter;
-        return matchesSearch && matchesFilter;
+        const matchesPlatform = currentFilter === 'all' || 
+            streamer.platform === currentFilter;
+        
+        return matchesSearch && matchesPlatform;
     });
 
     // Split into live and offline streamers
@@ -365,119 +361,104 @@ function updateStreamList() {
     const offlineStreamers = filteredStreamers.filter(s => !s.isLive && !s.banned);
     const bannedStreamers = filteredStreamers.filter(s => s.banned);
 
-    const streamList = document.getElementById('streamList');
-    if (!streamList) {
-        console.error('Stream list element not found');
-        return;
-    }
-
+    // Clear existing list
     streamList.innerHTML = '';
-    
-    if (filteredStreamers.length === 0) {
-        streamList.innerHTML = `
-            <div class="no-results">
-                <i class="fas fa-search"></i>
-                <p>No streams found</p>
-            </div>
-        `;
-        return;
-    }
 
-    // Add LIVE section
-    if (liveStreamers.length > 0) {
-        const liveSection = document.createElement('div');
-        liveSection.className = 'stream-section';
-        liveSection.innerHTML = `
-            <div class="section-header">
-                <span class="section-title live">
-                    LIVE
-                </span>
-                <span class="stream-count">
-                    <i class="fas fa-circle-dot"></i>
-                    ${liveStreamers.length} online
-                </span>
-            </div>
-        `;
+    // Async function to create section with cards
+    async function createSection(title, streamers, iconClass, count) {
+        if (streamers.length === 0) return null;
+
+        const section = document.createElement('div');
+        section.className = `stream-section ${title.toLowerCase()}-section`;
         
-        liveStreamers.forEach((streamer, index) => {
-            liveSection.appendChild(createStreamCard(streamer, index));
-        });
-        
-        streamList.appendChild(liveSection);
-    }
-
-    // Add OFFLINE section
-    if (offlineStreamers.length > 0) {
-        const offlineSection = document.createElement('div');
-        offlineSection.className = 'stream-section offline-section';
-        offlineSection.innerHTML = `
-            <div class="section-header">
-                <span class="section-title">
-                    OFFLINE
-                </span>
-                <span class="stream-count">
-                    <i class="fas fa-circle-minus"></i>
-                    ${offlineStreamers.length} offline
-                </span>
-            </div>
+        const sectionHeader = document.createElement('div');
+        sectionHeader.className = 'section-header';
+        sectionHeader.innerHTML = `
+            <span class="section-title ${title.toLowerCase() === 'live' ? 'live' : ''}">
+                ${title.toUpperCase()}
+            </span>
+            <span class="stream-count">
+                <i class="fas ${iconClass}"></i>
+                ${streamers.length} ${title.toLowerCase()}
+            </span>
         `;
+        section.appendChild(sectionHeader);
 
-        // Initially show only first 3 offline streamers
-        const initialOfflineCount = 3;
-        const visibleOfflineStreamers = offlineStreamers.slice(0, initialOfflineCount);
-        const remainingOfflineStreamers = offlineStreamers.slice(initialOfflineCount);
-
-        visibleOfflineStreamers.forEach(streamer => {
-            offlineSection.appendChild(createStreamCard(streamer));
+        // Create cards concurrently
+        const cardPromises = streamers.map(async streamer => {
+            const card = await createStreamCard(streamer);
+            return card;
         });
 
-        // Add "Show More" button if there are more offline streamers
-        if (remainingOfflineStreamers.length > 0) {
-            const showMoreBtn = createShowMoreButton(remainingOfflineStreamers.length);
-            showMoreBtn.addEventListener('click', () => {
-                // Remove the button
-                showMoreBtn.remove();
-                
-                // Add remaining streamers
-                remainingOfflineStreamers.forEach(streamer => {
-                    offlineSection.appendChild(createStreamCard(streamer));
+        const cards = await Promise.all(cardPromises);
+        
+        // For offline section, limit initial display
+        if (title === 'Offline') {
+            const initialOfflineCount = 3;
+            const visibleOfflineStreamers = cards.slice(0, initialOfflineCount);
+            const remainingOfflineStreamers = cards.slice(initialOfflineCount);
+
+            visibleOfflineStreamers.forEach(card => section.appendChild(card));
+
+            // Add "Show More" button if there are more offline streamers
+            if (remainingOfflineStreamers.length > 0) {
+                const showMoreBtn = createShowMoreButton(remainingOfflineStreamers.length);
+                showMoreBtn.addEventListener('click', () => {
+                    // Remove the button
+                    showMoreBtn.remove();
+                    
+                    // Add remaining streamers
+                    remainingOfflineStreamers.forEach(card => {
+                        section.appendChild(card);
+                    });
                 });
-            });
-            
-            offlineSection.appendChild(showMoreBtn);
+                
+                section.appendChild(showMoreBtn);
+            }
+        } else {
+            // For live and banned sections, append all cards
+            cards.forEach(card => section.appendChild(card));
         }
 
-        streamList.appendChild(offlineSection);
+        return section;
     }
 
-    // Add BANNED section if there are banned streamers
-    if (bannedStreamers.length > 0) {
-        const bannedSection = document.createElement('div');
-        bannedSection.className = 'stream-section banned-section';
-        bannedSection.innerHTML = `
-            <div class="section-header">
-                <span class="section-title">
-                    BANNED
-                </span>
-                <span class="stream-count">
-                    <i class="fas fa-ban"></i>
-                    ${bannedStreamers.length} banned
-                </span>
-            </div>
-        `;
-        
-        bannedStreamers.forEach(streamer => {
-            bannedSection.appendChild(createStreamCard(streamer));
-        });
-        
-        streamList.appendChild(bannedSection);
+    // Create sections concurrently
+    const sections = await Promise.all([
+        createSection('Live', liveStreamers, 'fa-circle-dot', liveStreamers.length),
+        createSection('Offline', offlineStreamers, 'fa-circle-minus', offlineStreamers.length),
+        createSection('Banned', bannedStreamers, 'fa-ban', bannedStreamers.length)
+    ]);
+
+    // Append non-null sections
+    sections.forEach(section => {
+        if (section) {
+            streamList.appendChild(section);
+        }
+    });
+
+    // Update UI based on results
+    const noResultsMessage = document.getElementById('no-results-message');
+    if (filteredStreamers.length === 0) {
+        if (!noResultsMessage) {
+            const message = document.createElement('div');
+            message.id = 'no-results-message';
+            message.className = 'no-results';
+            message.innerHTML = `
+                <i class="fas fa-search"></i>
+                <p>No streams found</p>
+            `;
+            streamList.appendChild(message);
+        }
+    } else if (noResultsMessage) {
+        noResultsMessage.remove();
     }
 
-    // Setup lazy loading after updating the DOM
+    // Optional: Trigger any post-render logic
     setupLazyLoading();
 }
 
-function createStreamCard(streamer) {
+async function createStreamCard(streamer) {
     const wasLive = lastKnownStates.get(streamer.channelId)?.isLive;
     const justWentLive = !wasLive && streamer.isLive;
     const statusChanged = wasLive !== streamer.isLive;
@@ -494,9 +475,38 @@ function createStreamCard(streamer) {
         timestamp: Date.now()
     });
 
-    const profilePath = streamer.banned ? 
-        `images/profiles/${streamer.platform}-${streamer.channelId}.webp` : 
-        (streamer.thumbnail || 'default-avatar.png');
+    let profilePath = 'default-avatar.png';
+    
+    // Determine profile picture path
+    if (streamer.banned) {
+        // For banned streamers, look in images/profiles directory
+        const possibleExtensions = ['.webp', '.jpg', '.png'];
+        for (const ext of possibleExtensions) {
+            const testPath = `images/profiles/${streamer.platform}-${streamer.channelId}${ext}`;
+            try {
+                // Check if file exists (this is a client-side check)
+                const response = await fetch(testPath);
+                if (response.ok) {
+                    profilePath = testPath;
+                    break;
+                }
+            } catch (error) {
+                // File not found, continue to next extension
+                continue;
+            }
+        }
+    } else {
+        // For non-banned streamers, dynamically fetch profile picture
+        try {
+            const response = await fetch(`/proxy-image?url=${encodeURIComponent(streamer.thumbnail)}&channelId=${streamer.channelId}&platform=${streamer.platform}`);
+            const result = await response.json();
+            if (result && result.localPath) {
+                profilePath = result.localPath;
+            }
+        } catch (error) {
+            console.error('Failed to fetch profile picture:', error);
+        }
+    }
 
     const contentWrapper = streamer.banned ? 
         document.createElement('div') : 
@@ -525,7 +535,7 @@ function createStreamCard(streamer) {
             </div>
             <div class="thumbnail-container">
                 <div class="image-placeholder"></div>
-                <img data-src="${profilePath}" alt="${streamer.name}" class="profile-pic lazy-image" onerror="this.src='default-avatar.png'">
+                <img src="${profilePath}" alt="${streamer.name}" class="profile-pic" onerror="this.src='default-avatar.png'">
                 ${streamer.banned ? '<div class="banned-overlay"><i class="fas fa-ban"></i></div>' : ''}
             </div>
         </div>
@@ -654,58 +664,41 @@ function setActiveFilter(platform) {
 }
 
 function updateLastUpdateTime() {
-    // Clear any existing interval
-    if (updateTimeInterval) {
-        clearInterval(updateTimeInterval);
-        updateTimeInterval = null;
+    const lastUpdateTime = document.getElementById('lastUpdateTime');
+    const nextUpdateIn = document.getElementById('nextUpdateIn');
+    
+    if (!lastUpdateTime || !nextUpdateIn) return;
+
+    const now = new Date();
+    lastUpdateTime.textContent = now.toLocaleTimeString([], {
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit'
+    });
+
+    // Clear any existing countdown
+    if (this.countdownInterval) {
+        clearInterval(this.countdownInterval);
     }
 
-    const refreshNotification = document.getElementById('refreshNotification');
-    
-    // Update the DOM structure for better styling
-    refreshNotification.innerHTML = `
-        <i class="fas fa-sync-alt"></i>
-        <span class="update-label">Next update in:</span>
-        <span class="time-display">
-            <span id="lastUpdateTime">60s</span>
-            <span class="countdown-bar"></span>
-        </span>
-    `;
+    // Set total countdown to 5 minutes (300 seconds)
+    let remainingSeconds = 300;
 
-    let lastUpdate = Date.now();
-    let countdown = 60; // 60 seconds countdown
+    // Initial update
+    nextUpdateIn.textContent = `Next update in ${remainingSeconds} seconds`;
 
-    // Update the countdown every second
-    updateTimeInterval = setInterval(() => {
-        countdown = 60 - Math.floor((Date.now() - lastUpdate) / 1000);
-        
-        if (countdown <= 0) {
-            lastUpdate = Date.now();
-            countdown = 60;
-            refreshNotification.classList.add('pulse');
-            setTimeout(() => refreshNotification.classList.remove('pulse'), 500);
-        }
+    // Start countdown
+    this.countdownInterval = setInterval(() => {
+        remainingSeconds--;
 
-        const timeDisplay = document.getElementById('lastUpdateTime');
-        if (timeDisplay) {
-            timeDisplay.textContent = `${countdown}s`;
-            
-            // Update progress bar
-            const progress = (countdown / 60) * 100;
-            const countdownBar = refreshNotification.querySelector('.countdown-bar');
-            if (countdownBar) {
-                countdownBar.style.setProperty('--progress', `${progress}%`);
-            }
+        // Update display
+        nextUpdateIn.textContent = `Next update in ${remainingSeconds} seconds`;
+
+        // Reset when countdown reaches zero
+        if (remainingSeconds <= 0) {
+            remainingSeconds = 300;
         }
     }, 1000);
-
-    // Clean up interval on page unload
-    window.addEventListener('unload', () => {
-        if (updateTimeInterval) {
-            clearInterval(updateTimeInterval);
-            updateTimeInterval = null;
-        }
-    });
 }
 
 // UI Feedback
@@ -786,87 +779,6 @@ function updateBannedStreamers() {
         `;
         bannedList.appendChild(element);
     });
-}
-
-function createLoadingSkeletons(count = 8) {
-    const streamList = document.getElementById('streamList');
-    streamList.innerHTML = '';
-    
-    // Create Live Section
-    const liveSection = document.createElement('div');
-    liveSection.className = 'stream-section';
-    
-    // Add loading section header
-    const liveSectionHeader = document.createElement('div');
-    liveSectionHeader.className = 'section-header loading';
-    liveSectionHeader.innerHTML = `
-        <div class="title-skeleton skeleton"></div>
-        <div class="count-skeleton skeleton"></div>
-    `;
-    liveSection.appendChild(liveSectionHeader);
-    
-    // Add loading stream items
-    for (let i = 0; i < Math.ceil(count * 0.6); i++) {
-        liveSection.appendChild(createLoadingCard());
-    }
-    
-    // Create Offline Section
-    const offlineSection = document.createElement('div');
-    offlineSection.className = 'stream-section offline-section';
-    
-    // Add loading section header
-    const offlineSectionHeader = document.createElement('div');
-    offlineSectionHeader.className = 'section-header loading';
-    offlineSectionHeader.innerHTML = `
-        <div class="title-skeleton skeleton"></div>
-        <div class="count-skeleton skeleton"></div>
-    `;
-    offlineSection.appendChild(offlineSectionHeader);
-    
-    // Add loading stream items
-    for (let i = 0; i < Math.floor(count * 0.4); i++) {
-        offlineSection.appendChild(createLoadingCard());
-    }
-    
-    // Append sections to stream list
-    streamList.appendChild(liveSection);
-    streamList.appendChild(offlineSection);
-}
-
-function createLoadingCard() {
-    const card = document.createElement('div');
-    card.className = 'stream-item loading';
-    
-    card.innerHTML = `
-        <div class="thumbnail-container skeleton"></div>
-        <div class="stream-info-skeleton">
-            <div class="name-skeleton skeleton"></div>
-            <div class="title-skeleton skeleton"></div>
-            <div class="title-skeleton-line skeleton"></div>
-            <div class="viewers-skeleton skeleton"></div>
-        </div>
-    `;
-    
-    return card;
-}
-
-// Modify your existing fetchStreams function
-async function fetchStreams() {
-    try {
-        createLoadingSkeletons(); // Show loading state
-        
-        const response = await fetch('/api/streams');
-        if (!response.ok) {
-            throw new Error('Failed to fetch streams');
-        }
-        
-        const streams = await response.json();
-        displayStreams(streams);
-        updateLastRefreshTime();
-    } catch (error) {
-        console.error('Error fetching streams:', error);
-        showError('Failed to load streams. Please try again later.');
-    }
 }
 
 function createShowMoreButton(count) {
@@ -967,4 +879,85 @@ async function getCachedData(url) {
         timestamp: Date.now()
     });
     return data;
+}
+
+// Modify your existing fetchStreams function
+async function fetchStreams() {
+    try {
+        createLoadingSkeletons(); // Show loading state
+        
+        const response = await fetch('/api/streams');
+        if (!response.ok) {
+            throw new Error('Failed to fetch streams');
+        }
+        
+        const streams = await response.json();
+        displayStreams(streams);
+        updateLastRefreshTime();
+    } catch (error) {
+        console.error('Error fetching streams:', error);
+        showError('Failed to load streams. Please try again later.');
+    }
+}
+
+function createLoadingSkeletons(count = 8) {
+    const streamList = document.getElementById('streamList');
+    streamList.innerHTML = '';
+    
+    // Create Live Section
+    const liveSection = document.createElement('div');
+    liveSection.className = 'stream-section';
+    
+    // Add loading section header
+    const liveSectionHeader = document.createElement('div');
+    liveSectionHeader.className = 'section-header loading';
+    liveSectionHeader.innerHTML = `
+        <div class="title-skeleton skeleton"></div>
+        <div class="count-skeleton skeleton"></div>
+    `;
+    liveSection.appendChild(liveSectionHeader);
+    
+    // Add loading stream items
+    for (let i = 0; i < Math.ceil(count * 0.6); i++) {
+        liveSection.appendChild(createLoadingCard());
+    }
+    
+    // Create Offline Section
+    const offlineSection = document.createElement('div');
+    offlineSection.className = 'stream-section offline-section';
+    
+    // Add loading section header
+    const offlineSectionHeader = document.createElement('div');
+    offlineSectionHeader.className = 'section-header loading';
+    offlineSectionHeader.innerHTML = `
+        <div class="title-skeleton skeleton"></div>
+        <div class="count-skeleton skeleton"></div>
+    `;
+    offlineSection.appendChild(offlineSectionHeader);
+    
+    // Add loading stream items
+    for (let i = 0; i < Math.floor(count * 0.4); i++) {
+        offlineSection.appendChild(createLoadingCard());
+    }
+    
+    // Append sections to stream list
+    streamList.appendChild(liveSection);
+    streamList.appendChild(offlineSection);
+}
+
+function createLoadingCard() {
+    const card = document.createElement('div');
+    card.className = 'stream-item loading';
+    
+    card.innerHTML = `
+        <div class="thumbnail-container skeleton"></div>
+        <div class="stream-info-skeleton">
+            <div class="name-skeleton skeleton"></div>
+            <div class="title-skeleton skeleton"></div>
+            <div class="title-skeleton-line skeleton"></div>
+            <div class="viewers-skeleton skeleton"></div>
+        </div>
+    `;
+    
+    return card;
 }
