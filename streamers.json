@@ -482,6 +482,39 @@
       "viewers": 0,
       "isLive": false,
       "lastOnline": null
+    },
+    {
+      "name": "Mando",
+      "platform": "kick",
+      "channelId": "mando",
+      "banned": false,
+      "title": "Offline",
+      "thumbnail": null,
+      "viewers": 0,
+      "isLive": false,
+      "lastOnline": null
+    },
+    {
+      "name": "Tazo",
+      "platform": "kick",
+      "channelId": "tazo",
+      "banned": false,
+      "title": "Offline",
+      "thumbnail": null,
+      "viewers": 0,
+      "isLive": false,
+      "lastOnline": null
+    },
+    {
+      "name": "Boneclinks",
+      "platform": "kick",
+      "channelId": "boneclinks",
+      "banned": false,
+      "title": "Offline",
+      "thumbnail": null,
+      "viewers": 0,
+      "isLive": false,
+      "lastOnline": null
     }
   ]
 }
