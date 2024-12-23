@@ -222,11 +222,7 @@ async function loadStreamers(retryCount = 0) {
                 "platform": "kick",
                 "channelId": "example",
                 "isLive": false,
-<<<<<<< HEAD
                 "viewers": 0,
-=======
-                "viewerCount": 0,
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
                 "title": "Loading...",
                 "banned": false
             }
@@ -262,11 +258,7 @@ async function updateViewerCounts() {
                 return {
                     ...streamer,
                     isLive: false,
-<<<<<<< HEAD
                     viewers: 0,
-=======
-                    viewerCount: 0,
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
                     title: 'Error loading stream',
                     error: true
                 };
@@ -279,11 +271,7 @@ async function updateViewerCounts() {
         STREAMERS.sort((a, b) => {
             if (a.isLive && !b.isLive) return -1;
             if (!a.isLive && b.isLive) return 1;
-<<<<<<< HEAD
             if (a.isLive && b.isLive) return (b.viewers || 0) - (a.viewers || 0);
-=======
-            if (a.isLive && b.isLive) return (b.viewerCount || 0) - (a.viewerCount || 0);
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
             return ((b.lastOnline || 0) - (a.lastOnline || 0));
         });
 
@@ -315,11 +303,7 @@ async function updateStreamerStatus(streamer) {
 
     try {
         // Store previous viewer count
-<<<<<<< HEAD
         streamer.previousViewers = streamer.viewers || 0;
-=======
-        streamer.previousViewers = streamer.viewerCount || 0;
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
         
         if (streamer.platform === 'kick') {
             try {
@@ -332,11 +316,7 @@ async function updateStreamerStatus(streamer) {
                 
                 // Update streamer data safely
                 streamer.isLive = Boolean(data.livestream);
-<<<<<<< HEAD
                 streamer.viewers = data.livestream ? parseInt(data.livestream.viewer_count) || 0 : 0;
-=======
-                streamer.viewerCount = data.livestream ? parseInt(data.livestream.viewer_count) || 0 : 0;
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
                 streamer.title = data.livestream ? 
                     data.livestream.session_title : 
                     (data.previous_live_stream ? data.previous_live_stream.session_title : 'Offline');
@@ -351,11 +331,7 @@ async function updateStreamerStatus(streamer) {
             } catch (error) {
                 console.error(`Error fetching Kick data for ${streamer.name}:`, error);
                 streamer.isLive = false;
-<<<<<<< HEAD
                 streamer.viewers = 0;
-=======
-                streamer.viewerCount = 0;
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
                 streamer.title = 'Error loading stream';
             }
         } else {
@@ -372,11 +348,7 @@ async function updateStreamerStatus(streamer) {
                     if (streamerData) {
                         streamer.isLive = Boolean(streamerData.isLive);
                         streamer.title = streamerData.title || 'Offline';
-<<<<<<< HEAD
                         streamer.viewers = parseInt(streamerData.viewers) || 0;
-=======
-                        streamer.viewerCount = parseInt(streamerData.viewerCount) || 0;
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
                         
                         if (!streamer.banned && streamerData.thumbnail) {
                             streamer.thumbnail = streamerData.thumbnail;
@@ -394,22 +366,14 @@ async function updateStreamerStatus(streamer) {
             } catch (error) {
                 console.error(`Error fetching status for ${streamer.name}:`, error);
                 streamer.isLive = false;
-<<<<<<< HEAD
                 streamer.viewers = 0;
-=======
-                streamer.viewerCount = 0;
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
                 streamer.title = 'Error loading stream';
             }
         }
     } catch (error) {
         console.error(`Error updating ${streamer.name}:`, error);
         streamer.isLive = false;
-<<<<<<< HEAD
         streamer.viewers = 0;
-=======
-        streamer.viewerCount = 0;
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
         streamer.title = 'Error';
     }
 
@@ -458,13 +422,8 @@ async function updateStreamList() {
         section.appendChild(sectionHeader);
 
         // Create cards concurrently
-<<<<<<< HEAD
-        const cardPromises = streamers.map(async streamer => {
-            const card = await createStreamCard(streamer);
-=======
         const cardPromises = streamers.map(async (streamer, index) => {
-            const card = await createStreamCard(streamer, title === 'Live' && index === 0 && streamer.viewerCount > 0);
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
+            const card = await createStreamCard(streamer, index, streamers);
             return card;
         });
 
@@ -536,22 +495,13 @@ async function updateStreamList() {
     setupLazyLoading();
 }
 
-<<<<<<< HEAD
-async function createStreamCard(streamer) {
+async function createStreamCard(streamer, index, streamers) {
     const wasLive = lastKnownStates.get(streamer.channelId)?.isLive;
     const justWentLive = !wasLive && streamer.isLive;
     const statusChanged = wasLive !== streamer.isLive;
     
     const card = document.createElement('div');
     card.className = `stream-item ${!streamer.isLive ? 'offline' : ''} ${streamer.banned ? 'banned' : ''} platform-${streamer.platform}`;
-=======
-async function createStreamCard(streamer, isTopStreamer = false) {
-    const wasLive = lastKnownStates.get(streamer.channelId)?.isLive;
-    const statusChanged = wasLive !== streamer.isLive;
-    
-    const card = document.createElement('div');
-    card.className = `stream-item ${!streamer.isLive ? 'offline' : ''} ${streamer.banned ? 'banned' : ''} platform-${streamer.platform}`; 
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
     if (statusChanged) {
         card.classList.add('status-changing');
     }
@@ -594,18 +544,7 @@ async function createStreamCard(streamer, isTopStreamer = false) {
             console.error('Failed to fetch profile picture:', error);
         }
     }
-
-<<<<<<< HEAD
-=======
-    // Top Streamer Trophy Badge
-    const topStreamerBadge = isTopStreamer ? `
-        <div class="top-streamer-badge">
-            <i class="fas fa-trophy"></i>
-            #1 Top Streamer
-        </div>
-    ` : '';
-
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
+    
     const profileImage = createOptimizedImage(profilePath, streamer.name, 'profile-pic');
 
     const contentWrapper = streamer.banned ? 
@@ -619,23 +558,24 @@ async function createStreamCard(streamer, isTopStreamer = false) {
     
     contentWrapper.className = 'stream-link';
     
-<<<<<<< HEAD
     // Add Just Live badge if streamer just went live
-    const justLiveBadge = justWentLive ? `
-        <div class="just-live-badge">
-            <i class="fas fa-circle"></i>
-            Just Live!
+    const justLiveBadge = ''; // Remove the entire badge generation
+
+    // Find the top streamer (highest viewer count)
+    const topStreamer = streamers.reduce((max, streamer) => 
+        (streamer.viewerCount > max.viewerCount) ? streamer : max
+    );
+    
+    // Only add TOP STREAMER badge to the streamer with the most viewers
+    const topStreamerBadge = (streamer === topStreamer && streamer.isLive) ? `
+        <div class="just-live-badge top-streamer-badge">
+            <i class="fas fa-trophy"></i> TOP STREAMER
         </div>
     ` : '';
 
     contentWrapper.innerHTML = `
         <div class="thumbnail-wrapper">
-            ${justLiveBadge}
-=======
-    contentWrapper.innerHTML = `
-        <div class="thumbnail-wrapper">
             ${topStreamerBadge}
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
             <div class="platform-logo-container ${streamer.platform}">
                 <img src="images/${streamer.platform === 'twitch' ? 'twitch-logo.png' : streamer.platform === 'youtube' ? 'youtube-logo-new.svg' : streamer.platform + '-logo.png'}" alt="${streamer.platform}" class="platform-logo">
             </div>
@@ -657,81 +597,23 @@ async function createStreamCard(streamer, isTopStreamer = false) {
             ${getViewerCountHtml(streamer)}
         </div>
     `;
-<<<<<<< HEAD
 
     card.appendChild(contentWrapper);
     return card;
+}
+
+function getTopStreamerBadge(streamer, index, streamers) {
+    // Only show TOP STREAMER badge for the streamer with the highest viewer count
+    if (index === 0) {
+        const badge = document.createElement('div');
+        badge.className = 'just-live-badge';
+        badge.innerHTML = `<i class="fas fa-trophy"></i> TOP STREAMER`;
+        return badge.outerHTML;
+    }
+    return '';
 }
 
 // Helper Functions
-=======
-    card.appendChild(contentWrapper);
-
-    return card;
-}
-
-function getViewerCountHtml(streamer) {
-    // For offline streamers, show time since last stream
-    if (!streamer.isLive && streamer.lastOnline) {
-        const offlineTime = getTimeAgo(streamer.lastOnline);
-        return `
-            <div class="viewer-count offline-status">
-                <i class="fas fa-clock"></i>
-                <span>Offline ${offlineTime}</span>
-            </div>
-        `;
-    }
-
-    // Existing live streamer logic
-    if (!streamer.viewerCount) return '';
-
-    // Format large numbers with abbreviations
-    const formatViewerCount = (count) => {
-        if (count >= 1000000) {
-            return `${(count / 1000000).toFixed(1)}M`;
-        } else if (count >= 1000) {
-            return `${(count / 1000).toFixed(1)}K`;
-        }
-        return count.toString();
-    };
-
-    // Determine viewer count status and color
-    const formattedCount = formatViewerCount(streamer.viewerCount);
-    const isHighViewership = streamer.viewerCount > 5000;
-    const isVeryHighViewership = streamer.viewerCount > 10000;
-
-    // Calculate viewer trend
-    let viewerTrend = '';
-    if (streamer.previousViewers !== undefined) {
-        const viewerDiff = streamer.viewerCount - streamer.previousViewers;
-        const diffAbs = Math.abs(viewerDiff);
-        const diffFormatted = formatViewerCount(diffAbs);
-        
-        if (viewerDiff > 0) {
-            viewerTrend = `
-                <div class="viewer-trend positive">
-                    <i class="fas fa-caret-up"></i>
-                    <span>+${diffFormatted}</span>
-                </div>`;
-        } else if (viewerDiff < 0) {
-            viewerTrend = `
-                <div class="viewer-trend negative">
-                    <i class="fas fa-caret-down"></i>
-                    <span>-${diffFormatted}</span>
-                </div>`;
-        }
-    }
-
-    return `
-        <div class="viewer-count ${isHighViewership ? 'high-viewership' : ''} ${isVeryHighViewership ? 'very-high-viewership' : ''}">
-            <i class="fas fa-eye"></i>
-            <span>${formattedCount}</span>
-            ${viewerTrend}
-        </div>
-    `;
-}
-
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
 function getStreamUrl(streamer) {
     if (streamer.platform === 'youtube') {
         return `https://youtube.com/channel/${streamer.channelId}${streamer.isLive ? '/live' : ''}`;
@@ -739,7 +621,6 @@ function getStreamUrl(streamer) {
     return `https://${streamer.platform}${streamer.platform === 'kick' ? '.com' : '.tv'}/${streamer.channelId}`;
 }
 
-<<<<<<< HEAD
 function getViewerCountHtml(streamer) {
     if (streamer.banned) {
         return `
@@ -831,8 +712,6 @@ function getTimeAgo(date) {
     return 'Just now';
 }
 
-=======
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
 function setActiveFilter(platform) {
     currentFilter = platform;
     const buttons = streamFilters.querySelectorAll('.filter-btn');
@@ -1196,28 +1075,3 @@ function trackMemoizationPerformance() {
         return result;
     };
 }
-<<<<<<< HEAD
-=======
-
-function getTimeAgo(date) {
-    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-    
-    const intervals = [
-        { label: 'year', seconds: 31536000 },
-        { label: 'month', seconds: 2592000 },
-        { label: 'week', seconds: 604800 },
-        { label: 'day', seconds: 86400 },
-        { label: 'hour', seconds: 3600 },
-        { label: 'minute', seconds: 60 }
-    ];
-    
-    for (const interval of intervals) {
-        const count = Math.floor(seconds / interval.seconds);
-        if (count >= 1) {
-            return `${count} ${interval.label}${count !== 1 ? 's' : ''} ago`;
-        }
-    }
-    
-    return 'Just now';
-}
->>>>>>> a0ec625 (Styling improvements: Platform logos and viewer count effects)
