@@ -222,7 +222,7 @@ async function loadStreamers(retryCount = 0) {
                 "platform": "kick",
                 "channelId": "example",
                 "isLive": false,
-                "viewerCount": 0,
+                "viewers": 0,
                 "title": "Loading...",
                 "banned": false
             }
@@ -258,7 +258,7 @@ async function updateViewerCounts() {
                 return {
                     ...streamer,
                     isLive: false,
-                    viewerCount: 0,
+                    viewers: 0,
                     title: 'Error loading stream',
                     error: true
                 };
@@ -271,7 +271,7 @@ async function updateViewerCounts() {
         STREAMERS.sort((a, b) => {
             if (a.isLive && !b.isLive) return -1;
             if (!a.isLive && b.isLive) return 1;
-            if (a.isLive && b.isLive) return (b.viewerCount || 0) - (a.viewerCount || 0);
+            if (a.isLive && b.isLive) return (b.viewers || 0) - (a.viewers || 0);
             return ((b.lastOnline || 0) - (a.lastOnline || 0));
         });
 
@@ -303,7 +303,7 @@ async function updateStreamerStatus(streamer) {
 
     try {
         // Store previous viewer count
-        streamer.previousViewers = streamer.viewerCount || 0;
+        streamer.previousViewers = streamer.viewers || 0;
         
         if (streamer.platform === 'kick') {
             try {
@@ -316,7 +316,7 @@ async function updateStreamerStatus(streamer) {
                 
                 // Update streamer data safely
                 streamer.isLive = Boolean(data.livestream);
-                streamer.viewerCount = data.livestream ? parseInt(data.livestream.viewer_count) || 0 : 0;
+                streamer.viewers = data.livestream ? parseInt(data.livestream.viewer_count) || 0 : 0;
                 streamer.title = data.livestream ? 
                     data.livestream.session_title : 
                     (data.previous_live_stream ? data.previous_live_stream.session_title : 'Offline');
@@ -331,7 +331,7 @@ async function updateStreamerStatus(streamer) {
             } catch (error) {
                 console.error(`Error fetching Kick data for ${streamer.name}:`, error);
                 streamer.isLive = false;
-                streamer.viewerCount = 0;
+                streamer.viewers = 0;
                 streamer.title = 'Error loading stream';
             }
         } else {
@@ -348,7 +348,7 @@ async function updateStreamerStatus(streamer) {
                     if (streamerData) {
                         streamer.isLive = Boolean(streamerData.isLive);
                         streamer.title = streamerData.title || 'Offline';
-                        streamer.viewerCount = parseInt(streamerData.viewerCount) || 0;
+                        streamer.viewers = parseInt(streamerData.viewers) || 0;
                         
                         if (!streamer.banned && streamerData.thumbnail) {
                             streamer.thumbnail = streamerData.thumbnail;
@@ -366,14 +366,14 @@ async function updateStreamerStatus(streamer) {
             } catch (error) {
                 console.error(`Error fetching status for ${streamer.name}:`, error);
                 streamer.isLive = false;
-                streamer.viewerCount = 0;
+                streamer.viewers = 0;
                 streamer.title = 'Error loading stream';
             }
         }
     } catch (error) {
         console.error(`Error updating ${streamer.name}:`, error);
         streamer.isLive = false;
-        streamer.viewerCount = 0;
+        streamer.viewers = 0;
         streamer.title = 'Error';
     }
 
@@ -423,7 +423,7 @@ async function updateStreamList() {
 
         // Create cards concurrently
         const cardPromises = streamers.map(async (streamer, index) => {
-            const card = await createStreamCard(streamer, title === 'Live' && index === 0 && streamer.viewerCount > 0);
+            const card = await createStreamCard(streamer, index, streamers);
             return card;
         });
 
@@ -495,12 +495,13 @@ async function updateStreamList() {
     setupLazyLoading();
 }
 
-async function createStreamCard(streamer, isTopStreamer = false) {
+async function createStreamCard(streamer, index, streamers) {
     const wasLive = lastKnownStates.get(streamer.channelId)?.isLive;
+    const justWentLive = !wasLive && streamer.isLive;
     const statusChanged = wasLive !== streamer.isLive;
     
     const card = document.createElement('div');
-    card.className = `stream-item ${!streamer.isLive ? 'offline' : ''} ${streamer.banned ? 'banned' : ''} platform-${streamer.platform}`; 
+    card.className = `stream-item ${!streamer.isLive ? 'offline' : ''} ${streamer.banned ? 'banned' : ''} platform-${streamer.platform}`;
     if (statusChanged) {
         card.classList.add('status-changing');
     }
@@ -543,15 +544,7 @@ async function createStreamCard(streamer, isTopStreamer = false) {
             console.error('Failed to fetch profile picture:', error);
         }
     }
-
-    // Top Streamer Trophy Badge
-    const topStreamerBadge = isTopStreamer ? `
-        <div class="top-streamer-badge">
-            <i class="fas fa-trophy"></i>
-            #1 Top Streamer
-        </div>
-    ` : '';
-
+    
     const profileImage = createOptimizedImage(profilePath, streamer.name, 'profile-pic');
 
     const contentWrapper = streamer.banned ? 
@@ -565,6 +558,21 @@ async function createStreamCard(streamer, isTopStreamer = false) {
     
     contentWrapper.className = 'stream-link';
     
+    // Add Just Live badge if streamer just went live
+    const justLiveBadge = ''; // Remove the entire badge generation
+
+    // Find the top streamer (highest viewer count)
+    const topStreamer = streamers.reduce((max, streamer) => 
+        (streamer.viewerCount > max.viewerCount) ? streamer : max
+    );
+    
+    // Only add TOP STREAMER badge to the streamer with the most viewers
+    const topStreamerBadge = (streamer === topStreamer && streamer.isLive) ? `
+        <div class="just-live-badge top-streamer-badge">
+            <i class="fas fa-trophy"></i> TOP STREAMER
+        </div>
+    ` : '';
+
     contentWrapper.innerHTML = `
         <div class="thumbnail-wrapper">
             ${topStreamerBadge}
@@ -589,77 +597,119 @@ async function createStreamCard(streamer, isTopStreamer = false) {
             ${getViewerCountHtml(streamer)}
         </div>
     `;
-    card.appendChild(contentWrapper);
 
+    card.appendChild(contentWrapper);
     return card;
 }
 
-function getViewerCountHtml(streamer) {
-    // For offline streamers, show time since last stream
-    if (!streamer.isLive && streamer.lastOnline) {
-        const offlineTime = getTimeAgo(streamer.lastOnline);
-        return `
-            <div class="viewer-count offline-status">
-                <i class="fas fa-clock"></i>
-                <span>Offline ${offlineTime}</span>
-            </div>
-        `;
+function getTopStreamerBadge(streamer, index, streamers) {
+    // Only show TOP STREAMER badge for the streamer with the highest viewer count
+    if (index === 0) {
+        const badge = document.createElement('div');
+        badge.className = 'just-live-badge';
+        badge.innerHTML = `<i class="fas fa-trophy"></i> TOP STREAMER`;
+        return badge.outerHTML;
     }
-
-    // Existing live streamer logic
-    if (!streamer.viewerCount) return '';
-
-    // Format large numbers with abbreviations
-    const formatViewerCount = (count) => {
-        if (count >= 1000000) {
-            return `${(count / 1000000).toFixed(1)}M`;
-        } else if (count >= 1000) {
-            return `${(count / 1000).toFixed(1)}K`;
-        }
-        return count.toString();
-    };
-
-    // Determine viewer count status and color
-    const formattedCount = formatViewerCount(streamer.viewerCount);
-    const isHighViewership = streamer.viewerCount > 5000;
-    const isVeryHighViewership = streamer.viewerCount > 10000;
-
-    // Calculate viewer trend
-    let viewerTrend = '';
-    if (streamer.previousViewers !== undefined) {
-        const viewerDiff = streamer.viewerCount - streamer.previousViewers;
-        const diffAbs = Math.abs(viewerDiff);
-        const diffFormatted = formatViewerCount(diffAbs);
-        
-        if (viewerDiff > 0) {
-            viewerTrend = `
-                <div class="viewer-trend positive">
-                    <i class="fas fa-caret-up"></i>
-                    <span>+${diffFormatted}</span>
-                </div>`;
-        } else if (viewerDiff < 0) {
-            viewerTrend = `
-                <div class="viewer-trend negative">
-                    <i class="fas fa-caret-down"></i>
-                    <span>-${diffFormatted}</span>
-                </div>`;
-        }
-    }
-
-    return `
-        <div class="viewer-count ${isHighViewership ? 'high-viewership' : ''} ${isVeryHighViewership ? 'very-high-viewership' : ''}">
-            <i class="fas fa-eye"></i>
-            <span>${formattedCount}</span>
-            ${viewerTrend}
-        </div>
-    `;
+    return '';
 }
 
+// Helper Functions
 function getStreamUrl(streamer) {
     if (streamer.platform === 'youtube') {
         return `https://youtube.com/channel/${streamer.channelId}${streamer.isLive ? '/live' : ''}`;
     }
     return `https://${streamer.platform}${streamer.platform === 'kick' ? '.com' : '.tv'}/${streamer.channelId}`;
+}
+
+function getViewerCountHtml(streamer) {
+    if (streamer.banned) {
+        return `
+            <div class="offline-status">
+                <i class="fas fa-ban"></i>
+                <span>Account Banned</span>
+            </div>
+        `;
+    }
+    
+    if (streamer.isLive) {
+        let viewerTrend = '';
+        if (streamer.previousViewers) {
+            const viewerDiff = streamer.viewers - streamer.previousViewers;
+            const diffAbs = Math.abs(viewerDiff);
+            const diffFormatted = formatViewerCount(diffAbs);
+            
+            if (viewerDiff > 0) {
+                viewerTrend = `
+                    <div class="viewer-trend positive">
+                        <i class="fas fa-caret-up"></i>
+                        <span>+${diffFormatted}</span>
+                    </div>`;
+            } else if (viewerDiff < 0) {
+                viewerTrend = `
+                    <div class="viewer-trend negative">
+                        <i class="fas fa-caret-down"></i>
+                        <span>-${diffFormatted}</span>
+                    </div>`;
+            }
+        }
+
+        // Check if this streamer has the highest viewer count
+        const isTopViewer = STREAMERS.every(s => 
+            !s.isLive || s.banned || streamer.viewers >= s.viewers
+        );
+            
+        return `
+            <div class="viewer-count ${isTopViewer ? 'top-viewers' : ''}">
+                ${isTopViewer ? '<span class="crown-emoji">👑</span>' : ''}
+                <i class="fas fa-user-friends"></i>
+                <span class="viewer-number">${formatViewerCount(streamer.viewers)}</span>
+                <span class="viewers-text">viewers</span>
+                ${viewerTrend}
+                ${isTopViewer ? '<span class="fire-emoji">🔥</span>' : ''}
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="offline-status">
+            <i class="fas fa-clock"></i>
+            <span>${streamer.lastOnline ? `Last live: ${getTimeAgo(new Date(streamer.lastOnline))}` : 'Offline'}</span>
+        </div>
+    `;
+}
+
+function formatViewerCount(count) {
+    if (count >= 1000000) {
+        return (count / 1000000).toFixed(1) + 'M';
+    }
+    if (count >= 1000) {
+        const k = (count / 1000).toFixed(1);
+        // Remove trailing .0 if present
+        return k.endsWith('.0') ? k.slice(0, -2) + 'K' : k + 'K';
+    }
+    return count.toLocaleString();
+}
+
+function getTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    
+    const intervals = {
+        year: 31536000,
+        month: 2592000,
+        week: 604800,
+        day: 86400,
+        hour: 3600,
+        minute: 60
+    };
+    
+    for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+        const interval = Math.floor(seconds / secondsInUnit);
+        if (interval >= 1) {
+            return `${interval} ${unit}${interval === 1 ? '' : 's'} ago`;
+        }
+    }
+    
+    return 'Just now';
 }
 
 function setActiveFilter(platform) {
@@ -752,50 +802,87 @@ function handleSearch() {
 
 // Update banned streamers panel
 function updateBannedStreamers() {
-    const bannedList = document.getElementById('bannedStreamersList');
-    const bannedStreamers = STREAMERS.filter(s => s.banned);
-    
-    bannedList.innerHTML = '';
-    
-    if (bannedStreamers.length === 0) {
-        bannedList.innerHTML = `
-            <div class="banned-streamer">
-                <div class="banned-info">
-                    <div class="banned-name">No banned streamers</div>
-                </div>
-            </div>
-        `;
-        return;
-    }
-    
+    const bannedStreamersContainer = document.getElementById('bannedStreamersList');
+    if (!bannedStreamersContainer) return;
+
+    // Clear existing banned streamers
+    bannedStreamersContainer.innerHTML = '';
+
+    // Filter and sort banned streamers
+    const bannedStreamers = STREAMERS.filter(streamer => streamer.banned)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+    // Create banned streamer items
     bannedStreamers.forEach(streamer => {
+        const bannedStreamerItem = document.createElement('div');
+        bannedStreamerItem.className = 'stream-item banned';
+
         const profilePath = `images/profiles/${streamer.platform}-${streamer.channelId}.webp`;
-        const element = document.createElement('div');
-        element.className = 'banned-streamer';
-        element.innerHTML = `
-            <div class="banned-avatar">
-                <img src="${profilePath}" alt="${streamer.name}" onerror="this.src='default-avatar.png'">
+        
+        // Default ban reason if not specified
+        const banReason = streamer.banReason || 'Terms of Service Violation';
+        
+        bannedStreamerItem.innerHTML = `
+            <div class="thumbnail-container">
+                <img src="${profilePath}" alt="${streamer.name}" 
+                     onerror="this.src='default-avatar.png'; this.onerror=null;">
             </div>
-            <div class="banned-info">
-                <div class="banned-name">
+            <div class="streamer-info">
+                <div class="streamer-name">
                     ${streamer.name}
                     <span class="banned-tag">BANNED</span>
                 </div>
-                <div class="violation-text">TOS VIOLATION</div>
+                <div class="ban-reason" title="Ban Reason">
+                    <i class="fas fa-exclamation-circle"></i> ${banReason}
+                </div>
             </div>
         `;
-        bannedList.appendChild(element);
+
+        bannedStreamersContainer.appendChild(bannedStreamerItem);
     });
+
+    // Show/hide banned streamers container based on banned streamers count
+    const bannedStreamersSection = document.getElementById('bannedStreamers');
+    bannedStreamersSection.style.display = bannedStreamers.length > 0 ? 'block' : 'none';
 }
 
-function createShowMoreButton(count) {
-    const button = document.createElement('button');
-    button.className = 'show-more-btn';
-    button.innerHTML = `
-        <span>Show ${count} more offline streamers</span>
-        <i class="fas fa-chevron-down"></i>
-    `;
-    return button;
+async function initializeApp() {
+    try {
+        await loadConfig();
+        await loadStreamers();
+
+        setupEventListeners();
+        await updateViewerCounts();
+        updateBannedStreamers();
+        updateLastUpdateTime();
+        
+        // Start update interval
+        setInterval(async () => {
+            if (Array.isArray(STREAMERS) && STREAMERS.length > 0) {
+                await updateViewerCounts();
+                updateBannedStreamers();
+            }
+        }, CONFIG.UPDATE_INTERVAL); // Every 5 minutes
+
+    } catch (error) {
+        console.error('Initialization failed:', error);
+        showErrorMessage('Failed to load application. Please try again later.');
+    }
+}
+
+async function updateAdminStreamers(newStreamers) {
+    try {
+        if (newStreamers && newStreamers.length > 0) {
+            STREAMERS = newStreamers;
+            updateViewerCounts();
+            updateStreamList();
+            updateBannedStreamers();
+            showToast('Streamer list updated from admin panel');
+        }
+    } catch (error) {
+        console.error('Update admin streamers failed:', error);
+        showErrorMessage('Failed to update streamer list.');
+    }
 }
 
 // Add new functions for lazy loading
@@ -822,6 +909,16 @@ function setupLazyLoading() {
     document.querySelectorAll('.profile-pic[data-src]').forEach(img => {
         observer.observe(img);
     });
+}
+
+function createShowMoreButton(count) {
+    const button = document.createElement('button');
+    button.className = 'show-more-btn';
+    button.innerHTML = `
+        <span>Show ${count} more offline streamers</span>
+        <i class="fas fa-chevron-down"></i>
+    `;
+    return button;
 }
 
 // Add mobile touch handling functions
@@ -1024,26 +1121,4 @@ function trackMemoizationPerformance() {
         console.log(`Memoized fetch status time: ${end - start}ms`);
         return result;
     };
-}
-
-function getTimeAgo(date) {
-    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-    
-    const intervals = [
-        { label: 'year', seconds: 31536000 },
-        { label: 'month', seconds: 2592000 },
-        { label: 'week', seconds: 604800 },
-        { label: 'day', seconds: 86400 },
-        { label: 'hour', seconds: 3600 },
-        { label: 'minute', seconds: 60 }
-    ];
-    
-    for (const interval of intervals) {
-        const count = Math.floor(seconds / interval.seconds);
-        if (count >= 1) {
-            return `${count} ${interval.label}${count !== 1 ? 's' : ''} ago`;
-        }
-    }
-    
-    return 'Just now';
 }
