@@ -84,7 +84,7 @@ export async function makeYouTubeRequest(url) {
             keyData.last_reset = now.toISOString();
         }
         
-        if (keyData.total_requests >= 9000) {
+        if (keyData.total_requests >= 7692) {
             // Skip this key if it's near quota limit
             currentKeyIndex = (currentKeyIndex + 1) % keys.length;
             continue;

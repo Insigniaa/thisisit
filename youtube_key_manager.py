@@ -91,7 +91,10 @@ def main():
         os.getenv('YOUTUBE_API_KEY_7'),
         os.getenv('YOUTUBE_API_KEY_8'),
         os.getenv('YOUTUBE_API_KEY_9'),
-        os.getenv('YOUTUBE_API_KEY_10')
+        os.getenv('YOUTUBE_API_KEY_10'),
+        os.getenv('YOUTUBE_API_KEY_11'),
+        os.getenv('YOUTUBE_API_KEY_12'),
+        os.getenv('YOUTUBE_API_KEY_13')
     ]
     
     # Filter out None values
