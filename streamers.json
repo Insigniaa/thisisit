@@ -322,7 +322,7 @@
       "name": "DBR666",
       "platform": "kick",
       "channelId": "dbr666",
-      "banned": true,
+      "banned": false,
       "title": "Offline",
       "thumbnail": null,
       "viewers": 0,
