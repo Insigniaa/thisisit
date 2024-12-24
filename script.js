@@ -1,7 +1,7 @@
 // Constants
 const CONFIG = {
     STORAGE_KEY: 'streamers',
-    UPDATE_INTERVAL: 300000, // 5 minutes
+    UPDATE_INTERVAL: 180000, // 3 minutes
     TOAST_DURATION: 3000,
     MAX_RETRIES: 3,
     UPDATE_CHECK_INTERVAL: 1000, // Check every second for time updates
@@ -86,13 +86,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateBannedStreamers();
         updateLastUpdateTime();
         
-        // Start update interval
-        setInterval(async () => {
-            if (Array.isArray(STREAMERS) && STREAMERS.length > 0) {
-                await updateViewerCounts();
-                updateBannedStreamers();
-            }
-        }, CONFIG.UPDATE_INTERVAL); // Every 5 minutes
+        // Centralized interval management
+        startCentralizedIntervals();
 
     } catch (error) {
         console.error('Initialization error:', error);
@@ -713,6 +708,57 @@ function getTimeAgo(date) {
 }
 
 function setActiveFilter(platform) {
+    // Specifically prevent YouTube platform selection
+    if (platform === 'youtube') {
+        // Create a warning overlay
+        const warningOverlay = document.createElement('div');
+        warningOverlay.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.7);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+                color: white;
+                flex-direction: column;
+                text-align: center;
+                padding: 20px;
+                box-sizing: border-box;
+            ">
+                <div style="
+                    background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+                    padding: 30px;
+                    border-radius: 15px;
+                    max-width: 500px;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                ">
+                    <h2 style="margin-bottom: 15px;">🛠️ YouTube Integration Coming Soon!</h2>
+                    <p style="line-height: 1.6;">We're actively working on bringing YouTube streaming to our platform. Our team is dedicated to expanding our streaming capabilities and will have YouTube support ready as soon as possible.</p>
+                    <p style="font-weight: bold; margin-top: 15px; color: #f0f0f0;">Stay tuned and thank you for your patience!</p>
+                    <button onclick="this.parentElement.parentElement.remove()" style="
+                        margin-top: 20px;
+                        padding: 12px 24px;
+                        background: white;
+                        color: #333;
+                        border: none;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: bold;
+                        transition: background 0.3s ease;
+                    ">Got It</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(warningOverlay);
+        return;
+    }
+
+    // Original filter logic
     currentFilter = platform;
     const buttons = streamFilters.querySelectorAll('.filter-btn');
     buttons.forEach(btn => {
@@ -738,8 +784,8 @@ function updateLastUpdateTime() {
         clearInterval(this.countdownInterval);
     }
 
-    // Set total countdown to 5 minutes (300 seconds)
-    let remainingSeconds = 300;
+    // Set total countdown to 3 minutes (180 seconds)
+    let remainingSeconds = 180;
 
     // Initial update
     nextUpdateIn.textContent = `Next update in ${remainingSeconds} seconds`;
@@ -753,7 +799,7 @@ function updateLastUpdateTime() {
 
         // Reset when countdown reaches zero
         if (remainingSeconds <= 0) {
-            remainingSeconds = 300;
+            remainingSeconds = 180;
         }
     }, 1000);
 }
@@ -802,50 +848,82 @@ function handleSearch() {
 
 // Update banned streamers panel
 function updateBannedStreamers() {
-    const bannedList = document.getElementById('bannedStreamersList');
-    const bannedStreamers = STREAMERS.filter(s => s.banned);
-    
-    bannedList.innerHTML = '';
-    
-    if (bannedStreamers.length === 0) {
-        bannedList.innerHTML = `
-            <div class="banned-streamer">
-                <div class="banned-info">
-                    <div class="banned-name">No banned streamers</div>
-                </div>
-            </div>
-        `;
-        return;
-    }
-    
+    const bannedStreamersContainer = document.getElementById('bannedStreamersList');
+    if (!bannedStreamersContainer) return;
+
+    // Clear existing banned streamers
+    bannedStreamersContainer.innerHTML = '';
+
+    // Filter and sort banned streamers
+    const bannedStreamers = STREAMERS.filter(streamer => streamer.banned)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+    // Create banned streamer items
     bannedStreamers.forEach(streamer => {
+        const bannedStreamerItem = document.createElement('div');
+        bannedStreamerItem.className = 'stream-item banned';
+
         const profilePath = `images/profiles/${streamer.platform}-${streamer.channelId}.webp`;
-        const element = document.createElement('div');
-        element.className = 'banned-streamer';
-        element.innerHTML = `
-            <div class="banned-avatar">
-                <img src="${profilePath}" alt="${streamer.name}" onerror="this.src='default-avatar.png'">
+        
+        // Default ban reason if not specified
+        const banReason = streamer.banReason || 'Terms of Service Violation';
+        
+        bannedStreamerItem.innerHTML = `
+            <div class="thumbnail-container">
+                <img src="${profilePath}" alt="${streamer.name}" 
+                     onerror="this.src='default-avatar.png'; this.onerror=null;">
             </div>
-            <div class="banned-info">
-                <div class="banned-name">
+            <div class="streamer-info">
+                <div class="streamer-name">
                     ${streamer.name}
                     <span class="banned-tag">BANNED</span>
                 </div>
-                <div class="violation-text">TOS VIOLATION</div>
+                <div class="ban-reason" title="Ban Reason">
+                    <i class="fas fa-exclamation-circle"></i> ${banReason}
+                </div>
             </div>
         `;
-        bannedList.appendChild(element);
+
+        bannedStreamersContainer.appendChild(bannedStreamerItem);
     });
+
+    // Show/hide banned streamers container based on banned streamers count
+    const bannedStreamersSection = document.getElementById('bannedStreamers');
+    bannedStreamersSection.style.display = bannedStreamers.length > 0 ? 'block' : 'none';
 }
 
-function createShowMoreButton(count) {
-    const button = document.createElement('button');
-    button.className = 'show-more-btn';
-    button.innerHTML = `
-        <span>Show ${count} more offline streamers</span>
-        <i class="fas fa-chevron-down"></i>
-    `;
-    return button;
+async function initializeApp() {
+    try {
+        await loadConfig();
+        await loadStreamers();
+
+        setupEventListeners();
+        await updateViewerCounts();
+        updateBannedStreamers();
+        updateLastUpdateTime();
+        
+        // Centralized interval management
+        startCentralizedIntervals();
+
+    } catch (error) {
+        console.error('Initialization failed:', error);
+        showErrorMessage('Failed to load application. Please try again later.');
+    }
+}
+
+async function updateAdminStreamers(newStreamers) {
+    try {
+        if (newStreamers && newStreamers.length > 0) {
+            STREAMERS = newStreamers;
+            updateViewerCounts();
+            updateStreamList();
+            updateBannedStreamers();
+            showToast('Streamer list updated from admin panel');
+        }
+    } catch (error) {
+        console.error('Update admin streamers failed:', error);
+        showErrorMessage('Failed to update streamer list.');
+    }
 }
 
 // Add new functions for lazy loading
@@ -872,6 +950,16 @@ function setupLazyLoading() {
     document.querySelectorAll('.profile-pic[data-src]').forEach(img => {
         observer.observe(img);
     });
+}
+
+function createShowMoreButton(count) {
+    const button = document.createElement('button');
+    button.className = 'show-more-btn';
+    button.innerHTML = `
+        <span>Show ${count} more offline streamers</span>
+        <i class="fas fa-chevron-down"></i>
+    `;
+    return button;
 }
 
 // Add mobile touch handling functions
@@ -1074,4 +1162,126 @@ function trackMemoizationPerformance() {
         console.log(`Memoized fetch status time: ${end - start}ms`);
         return result;
     };
+}
+
+// Snow Effect
+function createSnowflake() {
+    const snowContainer = document.getElementById('snowContainer');
+    if (!snowContainer) return;
+
+    // Performance Optimization: Limit total snowflakes
+    const existingSnowflakes = document.querySelectorAll('.snowflake');
+    if (existingSnowflakes.length > 50) return;
+
+    const snowflake = document.createElement('div');
+    snowflake.classList.add('snowflake');
+
+    // Randomize snowflake properties with performance in mind
+    const size = Math.random() * 3 + 1; // Smaller range: 1-4px
+    snowflake.style.width = `${size}px`;
+    snowflake.style.height = `${size}px`;
+
+    snowflake.style.left = `${Math.random() * 100}%`;
+    snowflake.style.animationDuration = `${Math.random() * 10 + 10}s`; // 10-20s
+    snowflake.style.opacity = Math.random() * 0.5 + 0.2; // More transparent: 0.2-0.7
+    
+    // Use CSS transforms for better performance
+    snowflake.style.transform = `
+        translateZ(0) 
+        rotate(${Math.random() * 360}deg)
+    `;
+
+    snowContainer.appendChild(snowflake);
+    
+    // Efficient cleanup
+    snowflake.addEventListener('animationend', () => {
+        snowflake.remove();
+    });
+}
+
+function startSnowEffect() {
+    // Performance and battery-friendly checks
+    const currentDate = new Date();
+    const snowContainer = document.getElementById('snowContainer');
+    
+    if (currentDate.getMonth() === 11 && snowContainer) { // December only
+        // Reduced frequency of snowflake creation
+        const snowInterval = setInterval(createSnowflake, 300); // Slower creation
+        
+        // Add optimized snow styles
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `
+            .snowflake {
+                position: fixed;
+                top: -10px;
+                background-color: white;
+                border-radius: 50%;
+                pointer-events: none;
+                will-change: transform, opacity;
+                backface-visibility: hidden;
+                perspective: 1000px;
+                z-index: 9999;
+                mix-blend-mode: overlay;
+            }
+
+            @keyframes fall {
+                to {
+                    transform: 
+                        translateY(100vh) 
+                        rotate(360deg) 
+                        translateZ(0);
+                }
+            }
+        `;
+        document.head.appendChild(styleSheet);
+        
+        // Shorter snow duration
+        setTimeout(() => {
+            clearInterval(snowInterval);
+        }, 45000); // Stop after 45 seconds
+    }
+}
+
+// Initialize snow effect when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    startSnowEffect();
+});
+
+// Centralized interval management
+let mainUpdateInterval = null;
+let countdownInterval = null;
+let snowInterval = null;
+
+function startCentralizedIntervals() {
+    // Clear any existing intervals first
+    if (mainUpdateInterval) clearInterval(mainUpdateInterval);
+    if (countdownInterval) clearInterval(countdownInterval);
+    if (snowInterval) clearInterval(snowInterval);
+
+    // Main update interval for viewer counts and banned streamers
+    mainUpdateInterval = setInterval(async () => {
+        if (Array.isArray(STREAMERS) && STREAMERS.length > 0) {
+            await updateViewerCounts();
+            updateBannedStreamers();
+        }
+    }, CONFIG.UPDATE_INTERVAL); // Every 3 minutes
+
+    // Countdown interval for UI
+    const nextUpdateIn = document.getElementById('nextUpdateIn');
+    if (nextUpdateIn) {
+        let remainingSeconds = 180;
+        nextUpdateIn.textContent = `Next update in ${remainingSeconds} seconds`;
+
+        countdownInterval = setInterval(() => {
+            remainingSeconds--;
+            nextUpdateIn.textContent = `Next update in ${remainingSeconds} seconds`;
+
+            if (remainingSeconds <= 0) {
+                remainingSeconds = 180;
+            }
+        }, 1000);
+    }
+
+    // Snow effect interval
+    snowInterval = setInterval(createSnowflake, 200);
 }

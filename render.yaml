@@ -1,9 +1,14 @@
 services:
   - type: web
-    name: beste-versie
-    env: node
-    buildCommand: npm install
-    startCommand: node server.js
+    name: streamer-dashboard
+    env: python
+    buildCommand: |
+      python3 -m pip install --upgrade pip
+      pip install -r requirements.txt
+      npm install
+    startCommand: |
+      python youtube_key_manager.py
+      node server.js
     envVars:
       - key: YOUTUBE_API_KEY_1
         sync: false
@@ -17,11 +22,19 @@ services:
         sync: false
       - key: YOUTUBE_API_KEY_6
         sync: false
-      - key: ADMIN_PASSWORD
+      - key: YOUTUBE_API_KEY_7
+        sync: false
+      - key: YOUTUBE_API_KEY_8
+        sync: false
+      - key: YOUTUBE_API_KEY_9
+        sync: false
+      - key: YOUTUBE_API_KEY_10
+        sync: false
+      - key: YOUTUBE_API_KEY_11
+        sync: false
+      - key: YOUTUBE_API_KEY_12
+        sync: false
+      - key: YOUTUBE_API_KEY_13
         sync: false
       - key: PORT
         value: 3000
-      - key: TWITCH_CLIENT_ID
-        sync: false
-      - key: TWITCH_AUTH_TOKEN
-        sync: false

@@ -36,8 +36,7 @@ function initializeEventListeners() {
     document.getElementById('filterPlatform').addEventListener('change', handlePlatformFilter);
     
     // Start periodic updates
-    setInterval(updateStreamingStats, 60000); // Update every minute
-    setInterval(updateLeaderboard, 300000); // Update every 5 minutes
+    startCentralizedIntervals();
 }
 
 // Authentication
@@ -394,6 +393,18 @@ async function updateStreamingStats() {
     } catch (error) {
         console.error('Error updating streaming stats:', error);
     }
+}
+
+function startCentralizedIntervals() {
+    // Clear any existing intervals first
+    if (window.statsInterval) clearInterval(window.statsInterval);
+    if (window.leaderboardInterval) clearInterval(window.leaderboardInterval);
+
+    // Update streaming stats every minute
+    window.statsInterval = setInterval(updateStreamingStats, 60000);
+
+    // Update leaderboard every 3 minutes
+    window.leaderboardInterval = setInterval(updateLeaderboard, 180000);
 }
 
 function updateStreamerStatus(streamerId, isLive, viewerCount = 0) {
