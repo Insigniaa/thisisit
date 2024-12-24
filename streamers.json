@@ -515,6 +515,39 @@
       "viewers": 0,
       "isLive": false,
       "lastOnline": null
+    },
+    {
+      "name": "OneSonicIRL",
+      "platform": "kick",
+      "channelId": "onesonicirl",
+      "banned": false,
+      "title": "Offline",
+      "thumbnail": null,
+      "viewers": 0,
+      "isLive": false,
+      "lastOnline": null
+    },
+    {
+      "name": "Bennymack",
+      "platform": "kick",
+      "channelId": "bennymack",
+      "banned": false,
+      "title": "Offline",
+      "thumbnail": null,
+      "viewers": 0,
+      "isLive": false,
+      "lastOnline": null
+    },
+    {
+      "name": "xGEWNx",
+      "platform": "kick",
+      "channelId": "xgewnx",
+      "banned": false,
+      "title": "Offline",
+      "thumbnail": null,
+      "viewers": 0,
+      "isLive": false,
+      "lastOnline": null
     }
   ]
 }
